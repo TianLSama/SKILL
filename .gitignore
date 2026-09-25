@@ -1,0 +1,83 @@
+# ============================================================
+# .gitignore - 技能集合仓库
+# 规则：仅提交各技能的 SKILL.md 等源文件；以下项目无关内容不入库
+# ============================================================
+
+# ----- 操作系统垃圾文件 -----
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+# ----- 编辑器 / IDE -----
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.code-workspace
+
+# ----- AI Agent 缓存 / 会话状态（opencode、codegraph 等，与项目无关）-----
+.codegraph/
+.omo/
+.opencode/
+.opencode-cache/
+.cache/
+.claude/
+.codex/
+.agents/
+.cursor/
+.aider*
+*.session.json
+
+# ----- Python（技能脚本常使用 pandas / openpyxl 生成 Excel）-----
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+.venv/
+venv/
+env/
+ENV/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# ----- Node.js（若技能附带前端 / 脚本）-----
+node_modules/
+dist/
+build/
+.npm/
+.npm-cache/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ----- 构建 / 编译产物 -----
+out/
+*.egg
+*.whl
+*.class
+*.o
+*.obj
+
+# ----- 临时文件与日志 -----
+*.log
+*.tmp
+*.temp
+*.bak
+tmp/
+temp/
+logs/
+
+# ----- 运行时生成的报告产物（保留 SKILL.md 模板，忽略批量输出）-----
+# 网络热梗追踪生成的 Excel 报告
+hot-search/网络热梗追踪_*.xlsx
+hot-search/output/
+# 通用导出目录
+exports/
+output/
