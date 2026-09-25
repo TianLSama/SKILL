@@ -59,5 +59,7 @@ temp/
 logs/
 hot-search/网络热梗追踪_*.xlsx
 hot-search/output/
+hot-search/download/
+hot-search/report_data.json
 exports/
 output/
