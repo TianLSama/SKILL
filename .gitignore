@@ -31,6 +31,10 @@ $RECYCLE.BIN/
 .aider*
 *.session.json
 
+# ----- 记忆文件（本地留存，不入库、不推送）-----
+MEMORY.md
+**/MEMORY.md
+
 # ----- Python（技能脚本常使用 pandas / openpyxl 生成 Excel）-----
 __pycache__/
 *.py[cod]
