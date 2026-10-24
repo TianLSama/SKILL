@@ -63,3 +63,6 @@ hot-search/download/
 hot-search/report_data.json
 exports/
 output/
+.dsh-acl-recovery/
+.tmp-*/
+*.tgz

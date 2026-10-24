@@ -1,0 +1,13 @@
+# Qwen 全模态桥接：把音频/视频路由到 qwen3.8-omni-flash。
+# 安装为 profile bundle 后，这一行会插入 Host 插件树。
+- insert:
+    - id: qwen-omni-bridge
+      name: '@local/qwen-omni-bridge'
+      config:
+        apiKeyEnv:
+          - ALIYUN_API_KEY
+          - DASHSCOPE_API_KEY
+        baseURL: https://ws-srp61mkj9bp9w0ct.cn-beijing.maas.aliyuncs.com/compatible-mode/v1
+        model: qwen3.8-omni-flash
+        reasoningEffort: low
+        autoAnalyzeAttachments: true

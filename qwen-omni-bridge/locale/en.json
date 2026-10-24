@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Qwen Omni Bridge",
+    "description": "Routes audio and video to qwen3.8-omni-flash so the main model can understand them, on demand or automatically."
+  }
+}

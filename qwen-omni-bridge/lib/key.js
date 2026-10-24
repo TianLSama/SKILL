@@ -1,0 +1,63 @@
+/**
+ * API Key 解析。
+ *
+ * 优先级：
+ *   1. 当前进程环境变量（DSH 进程启动时继承的环境）；
+ *   2. Windows 用户环境变量（HKCU\Environment）。有些部署会在 DSH 启动后
+ *      才设置用户变量，此时进程环境里没有，但注册表里已经有了。
+ *
+ * 只返回密钥本身和来源标签，绝不把密钥写入日志或工具输出。
+ */
+import { execFileSync } from 'node:child_process';
+
+const cache = new Map();
+
+function escapeRegExp(text) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/** 从 HKCU\Environment 读取一个用户环境变量；非 Windows 或不存在时返回 undefined。 */
+function readWindowsUserEnv(name) {
+  if (process.platform !== 'win32') return undefined;
+  if (cache.has(name)) return cache.get(name);
+  let value;
+  try {
+    const output = execFileSync('reg', ['query', 'HKCU\\Environment', '/v', name], {
+      encoding: 'utf8',
+      windowsHide: true,
+      timeout: 5_000,
+    });
+    const pattern = new RegExp(`^\\s*${escapeRegExp(name)}\\s+REG_(?:SZ|EXPAND_SZ)\\s+(.+)$`, 'mi');
+    const match = output.match(pattern);
+    value = match?.[1]?.trim() || undefined;
+  } catch {
+    value = undefined;
+  }
+  cache.set(name, value);
+  return value;
+}
+
+/**
+ * 按配置的环境变量名列表解析 API Key。
+ * @param {readonly string[]} names
+ * @returns {{ value: string, source: string } | undefined}
+ */
+export function resolveApiKey(names) {
+  const list = Array.isArray(names) && names.length > 0 ? names : ['ALIYUN_API_KEY'];
+  for (const name of list) {
+    const value = process.env[name];
+    if (typeof value === 'string' && value.trim()) {
+      return { value: value.trim(), source: `env:${name}` };
+    }
+  }
+  for (const name of list) {
+    const value = readWindowsUserEnv(name);
+    if (value) return { value, source: `HKCU\\Environment:${name}` };
+  }
+  return undefined;
+}
+
+/** 测试用：清空注册表读取缓存。 */
+export function clearApiKeyCache() {
+  cache.clear();
+}

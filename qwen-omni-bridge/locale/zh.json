@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Qwen 全模态桥接",
+    "description": "把音频、视频路由到 qwen3.8-omni-flash，让主模型理解音视频内容；支持按需调用与自动解析。"
+  }
+}
