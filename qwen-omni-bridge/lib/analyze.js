@@ -12,8 +12,8 @@ import {
 } from './media.js';
 
 export const NO_API_KEY_MESSAGE =
-  '未找到 API Key：请设置环境变量 ALIYUN_API_KEY（或 DASHSCOPE_API_KEY）。' +
-  '插件也会尝试读取 Windows 用户环境变量（HKCU\\Environment）。';
+  '未找到 API Key：请在插件管理页面的「API Key」中填写，或设置环境变量 ALIYUN_API_KEY（也支持 DASHSCOPE_API_KEY）。' +
+  '页面留空时会自动读取环境变量，并尝试 Windows 用户环境变量（HKCU\\Environment）。';
 
 const VIDEO_PROMPT = `请完整解析这个视频，用中文输出：
 1. 内容概述；
@@ -116,7 +116,7 @@ export async function resolveMediaInput(input, { cwd, cfg }) {
  */
 export async function analyzeMedia({ inputs, prompt, cfg, cwd, signal, timeoutMs }) {
   if (!Array.isArray(inputs) || inputs.length === 0) throw new Error('没有提供媒体输入。');
-  const apiKey = resolveApiKey(cfg.apiKeyEnv);
+  const apiKey = resolveApiKey(cfg.apiKey, cfg.apiKeyEnv);
   if (!apiKey) throw new Error(NO_API_KEY_MESSAGE);
 
   const resolved = [];

@@ -2,8 +2,9 @@
  * API Key 解析。
  *
  * 优先级：
- *   1. 当前进程环境变量（DSH 进程启动时继承的环境）；
- *   2. Windows 用户环境变量（HKCU\Environment）。有些部署会在 DSH 启动后
+ *   1. 插件管理页面填写的 API Key（config.apiKey，非空时使用）；
+ *   2. 当前进程环境变量（默认 ALIYUN_API_KEY，其次 DASHSCOPE_API_KEY）；
+ *   3. Windows 用户环境变量（HKCU\Environment）。有些部署会在 DSH 启动后
  *      才设置用户变量，此时进程环境里没有，但注册表里已经有了。
  *
  * 只返回密钥本身和来源标签，绝不把密钥写入日志或工具输出。
@@ -38,12 +39,16 @@ function readWindowsUserEnv(name) {
 }
 
 /**
- * 按配置的环境变量名列表解析 API Key。
- * @param {readonly string[]} names
+ * 解析 API Key：页面配置优先；留空时读取环境变量。
+ * @param {string | undefined} literal 插件管理页面填写的 Key
+ * @param {readonly string[]} names 环境变量名列表，按顺序尝试
  * @returns {{ value: string, source: string } | undefined}
  */
-export function resolveApiKey(names) {
-  const list = Array.isArray(names) && names.length > 0 ? names : ['ALIYUN_API_KEY'];
+export function resolveApiKey(literal, names) {
+  if (typeof literal === 'string' && literal.trim()) {
+    return { value: literal.trim(), source: 'config.plugin-page' };
+  }
+  const list = Array.isArray(names) && names.length > 0 ? names : ['ALIYUN_API_KEY', 'DASHSCOPE_API_KEY'];
   for (const name of list) {
     const value = process.env[name];
     if (typeof value === 'string' && value.trim()) {

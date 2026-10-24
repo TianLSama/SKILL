@@ -1,6 +1,6 @@
 {
   "name": "@local/qwen-omni-bridge",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Route audio and video input to qwen3.8-omni-flash and return text to the main model",
   "type": "module",
@@ -16,8 +16,12 @@
     "cordis.patch.yml",
     "locale/*.json",
     "icon.svg",
-    "README.md"
+    "README.md",
+    "scripts/*.ps1"
   ],
+  "dependencies": {
+    "@deepseek-ai/schemastery": "~3.18.5"
+  },
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"

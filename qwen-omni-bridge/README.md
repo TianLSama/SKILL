@@ -2,10 +2,10 @@
 
 把音频、视频模态的输入路由到 **qwen3.8-omni-flash**，把文字结果返回给主模型（DeepSeek Harness 中的 deepseek-flash），让主模型能够“理解”音视频。提供两种使用方式：
 
-1. **按需调用**：注册 `omni_media` 工具。主模型遇到音视频文件时可以主动调用，传入路径和问题，拿到转写/画面描述/问答结果。
-2. **自动路由**：用户上传音视频附件时，`agent/pre-step` 钩子先调用 qwen3.8-omni-flash 解析，然后在原用户消息之后插入一条来源为 `qwen-omni-bridge` 的上下文消息（内容为 `<omni-media-analysis>`）。主模型在同一步就能看到内容，无需再自行决定是否调用工具。
+1. **按需调用**：注册 `omni_media` 工具。主模型遇到音视频文件时主动调用，传入路径和问题，拿到转写/画面描述/问答结果。
+2. **自动路由**：用户上传音视频附件时，`agent/pre-step` 钩子先调用 qwen3.8-omni-flash 解析，然后在原用户消息之后插入一条来源为 `qwen-omni-bridge` 的上下文消息（内容为 `<omni-media-analysis>`）。主模型在同一步就能看到内容。
 
-插件是 Host-only、零 `@deepseek-ai/*` 依赖的 bundle，只使用 Node 内置模块。
+插件是 Host-only bundle，唯一外部依赖是 `@deepseek-ai/schemastery`（用于插件管理页面的配置表单）。
 
 ## 接入点与模型
 
@@ -14,45 +14,65 @@
 | Base URL | `https://ws-srp61mkj9bp9w0ct.cn-beijing.maas.aliyuncs.com/compatible-mode/v1` |
 | 模型 | `qwen3.8-omni-flash` |
 | 协议 | OpenAI 兼容 `POST /chat/completions`，`modalities: ["text"]` |
-| API Key | 默认读取 `ALIYUN_API_KEY`，其次 `DASHSCOPE_API_KEY` |
+| 默认 Key 环境变量 | `ALIYUN_API_KEY`，其次 `DASHSCOPE_API_KEY` |
 
-API Key 解析顺序：
+## API Key 解析顺序
 
-1. 当前进程环境变量；
-2. Windows 用户环境变量（`HKCU\Environment`）。有些环境在 DSH 启动后才设置用户变量，此时进程环境里没有、注册表里已有，插件仍能读到。
+1. **插件管理页面填写的 API Key**（`apiKey` 非空时优先使用）；
+2. 环境变量 `ALIYUN_API_KEY`（或页面配置的 `apiKeyEnv`）；
+3. 环境变量 `DASHSCOPE_API_KEY`；
+4. Windows 用户环境变量（`HKCU\Environment`）。有些环境在 DSH 启动后才设置用户变量，此时进程环境里没有、注册表里已有，插件仍能读到。
 
-密钥不会出现在日志或工具输出中。
+页面上的 API Key 留空即表示“使用环境变量”。密钥不会出现在日志、调试输出或工具结果中。
 
-## 安装
+## 安装与运行位置
 
-在 DSH 中通过插件管理器安装本目录：
+为避免工作区路径变化导致插件无法加载，运行时使用 DSH 目录下的独立副本：
+
+| 用途 | 路径 |
+| --- | --- |
+| 开发源码 | `E:\Work\coding\SKILL\qwen-omni-bridge` |
+| DSH 运行时副本 | `C:\Users\m1571\.dsh\plugins\qwen-omni-bridge` |
+
+安装时指向运行时副本，而不是工作区：
 
 ```text
-plugin_manager install_bundle  target = E:\Work\coding\SKILL\qwen-omni-bridge
+plugin_manager install_bundle  target = C:\Users\m1571\.dsh\plugins\qwen-omni-bridge
 ```
 
 安装后 bundle 会写入当前 profile，并在 Host 插件树中插入 `qwen-omni-bridge` 行。无需重启；新会话即可看到 `omni_media` 工具。可用 `cordis_inspect_query` 的 `Config.listConfigs` / `Tool.listTools` 确认激活。
 
-## 配置
+更新插件时，把源码同步到运行时副本后重新安装：
 
-`cordis.patch.yml` 已给出推荐默认值。可通过覆盖该行的 `config` 调整：
+```powershell
+pwsh -File scripts\sync-to-dsh.ps1
+# 然后在 DSH 里重新 install_bundle 指向运行时副本
+```
 
-| 键 | 默认值 | 说明 |
+## 插件管理页面配置
+
+安装后可在 DSH 的插件管理/设置页面直接编辑以下字段。字段使用 Schemastery `volatile`，修改后在下一次工具调用或 `pre-step` 时生效（`timeoutMs` 除外，它注册在工具定义上，需重载插件）。
+
+| 字段 | 默认值 | 说明 |
 | --- | --- | --- |
 | `baseURL` | 上述接入点 | OpenAI 兼容接口根地址 |
+| `apiKey` | 空 | API Key；留空则读取环境变量 |
+| `apiKeyEnv` | `ALIYUN_API_KEY` | 页面 Key 留空时优先读取的环境变量名 |
 | `model` | `qwen3.8-omni-flash` | 模型名 |
-| `apiKeyEnv` | `[ALIYUN_API_KEY, DASHSCOPE_API_KEY]` | 依次尝试的环境变量名 |
-| `reasoningEffort` | `low` | `none`/`low`/`medium`/`xhigh`；默认思考强度 |
+| `reasoningEffort` | `low` | `none`/`low`/`medium`/`xhigh` |
 | `autoAnalyzeAttachments` | `true` | 是否自动解析用户上传的音视频附件 |
-| `autoAnalyzeMaxBytes` | `8000000` | 超过此大小不自动解析，改为提示调用工具 |
-| `autoAnalyzeTimeoutMs` | `120000` | 自动解析超时 |
-| `autoMaxOutputChars` | `12000` | 自动解析结果写入消息的最大字符数 |
-| `maxOutputChars` | `40000` | 工具结果最大字符数 |
-| `timeoutMs` | `600000` | 工具调用超时 |
 | `allowOutsideWorkspace` | `false` | 是否允许工具读取工作区和 DSH 附件目录之外的路径 |
-| `ffmpegPath` / `ffprobePath` | `ffmpeg` / `ffprobe` | 转码工具路径 |
+| `autoAnalyzeMaxBytes` | `8000000` | 自动解析的媒体大小上限 |
+| `autoAnalyzeTimeoutMs` | `120000` | 自动解析超时（毫秒） |
+| `autoMaxOutputChars` | `12000` | 自动解析结果写入上下文的最大字符数 |
+| `maxOutputChars` | `40000` | 工具结果最大字符数 |
+| `timeoutMs` | `600000` | 工具调用超时（毫秒）；修改后需重载插件 |
 | `maxSegments` | `12` | 单个媒体最多切分段数 |
-| `debug` | `false` | 打印请求耗时、密钥来源等调试日志（不含密钥） |
+| `ffmpegPath` | `ffmpeg` | ffmpeg 可执行文件路径 |
+| `ffprobePath` | `ffprobe` | ffprobe 可执行文件路径 |
+| `debug` | `false` | 打印调试日志（不含密钥） |
+
+`cordis.patch.yml` 中给出了同样的默认值；插件管理页面的修改会作为 profile 覆盖层保存。
 
 ## 使用
 
@@ -85,7 +105,7 @@ omni_media(
 </omni-media-analysis>
 ```
 
-主模型下一步直接基于这段文字回答。解析失败会写入 `<omni-media-analysis-error>`，不会阻断整个回合；文件过大则写入 `<omni-media-note>`，提示模型按需调用 `omni_media`。
+解析失败会写入 `<omni-media-analysis-error>`，不会阻断整个回合；文件过大则写入 `<omni-media-note>`，提示模型按需调用 `omni_media`。
 
 ## 媒体处理细节
 
@@ -119,36 +139,42 @@ DashScope 的 OpenAI 兼容接口对 Base64 媒体有两个约束：
 - 其他绝对路径会被拒绝；确需读取时显式设置 `allowOutsideWorkspace: true`。
 - 自动路由只处理 `attachment` 服务提供的附件路径，不扫描磁盘。
 - 模型通过工具发送到阿里云的内容仅限用户指定/上传的媒体文件。
+- API Key 只保存在当前 profile 配置或环境变量中；日志和错误信息会脱敏。
 
 ## 验证记录
 
 在 Windows + DSH 0.2.1-rc.2 环境下已验证：
 
 - 接入点 `GET /models` 可列出 `qwen3.8-omni-flash`；API Key 有效。
-- 8 秒中文 TTS WAV：逐字转写与语气判断正确，耗时约 2.8 秒，`reasoning_effort: none`。
-- 4 秒 MP4（蓝色背景 + 两行中文）：画面描述与 OCR 正确，耗时约 1.6 秒，`video_tokens` 正常计费。
+- 8 秒中文 TTS WAV：逐字转写与语气判断正确。
+- 4 秒 MP4（蓝色背景 + 两行中文）：画面描述与 OCR 正确。
 - 非流式请求 `stream: false` 可用，响应为 `choices[0].message.content` 字符串。
-- 插件安装后 `omni_media` 工具可见；通过子代理实际调用可返回转写/描述结果。
+- 大文件：1000 秒 MP3 自动切成 2 段，每段 Base64 均小于 10MB。
+- `Config` schema 可导出，`normalizeConfig` 能读取 Schemastery `volatile` 字段与页面 Key；`Config.listConfigs` 状态为 `schema`，`apiKey` 带 `role: secret`。
+- profile 依赖已指向 `~/.dsh/plugins/qwen-omni-bridge` 运行时副本；移动/改名工作区不影响插件加载。
+- 通过子代理真实调用 `omni_media` 可返回视频文字；重新安装到运行时副本后再次调用成功返回音频气温（页面 Key 留空，走环境变量回退）。
 
 未完成/受限验证：
 
 - 自动路由的完整 Web UI 上传链路需要真实上传附件；已用单元方式验证 pre-step 消息注入逻辑（真实 API + 假 ctx），端到端上传未在无浏览器控制的情况下验证。
-- 超长视频（> 48 分钟）会触发分段上限并提示裁剪，未做长视频质量评估。
+- 超长视频（> 48 分钟，12 段上限）的质量与耗时。
+- 插件管理页面表单的实际渲染（无浏览器控制），已通过 `Config` schema 和默认值校验。
 
 ## 文件结构
 
 ```text
 qwen-omni-bridge/
-├─ index.js                 # Loader 入口（零 @deepseek-ai/* 依赖）
+├─ index.js                 # Loader 入口
 ├─ lib/
 │  ├─ plugin.js             # 工具注册、pre-step 自动路由、系统提示
-│  ├─ config.js             # 配置归一化
-│  ├─ key.js                # 环境变量 / HKCU 密钥解析
+│  ├─ config.js             # Config schema、配置归一化
+│  ├─ key.js                # 页面 Key / 环境变量 / HKCU 解析
 │  ├─ api.js                # OpenAI 兼容 Chat Completions 客户端
 │  ├─ analyze.js            # 路径解析、提示词、结果截断
 │  └─ media.js              # 类型识别、Base64、ffmpeg 转码与分段
 ├─ cordis.patch.yml         # bundle patch
 ├─ locale/{zh,en}.json      # 插件管理器显示元数据
 ├─ icon.svg
-└─ test/                    # 本地冒烟测试
+├─ scripts/sync-to-dsh.ps1  # 同步到 DSH 运行时副本
+└─ test/smoke.mjs           # 本地冒烟测试
 ```

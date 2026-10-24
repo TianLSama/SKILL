@@ -68,14 +68,30 @@ function fakeContext(cwd = process.cwd()) {
 }
 
 async function main() {
-  log('API Key');
-  const key = resolveApiKey(['ALIYUN_API_KEY', 'DASHSCOPE_API_KEY']);
+  log('环境与配置读取');
+  const key = resolveApiKey(undefined, ['ALIYUN_API_KEY', 'DASHSCOPE_API_KEY']);
   if (!key) {
     console.error('未找到 API Key，测试终止。');
     process.exitCode = 1;
     return;
   }
   console.log(`已找到密钥，来源：${key.source}（值已隐藏）`);
+
+  const liveCfg = normalizeConfig({
+    baseURL: { get: () => 'https://example.test/compatible-mode/v1/' },
+    apiKey: { get: () => 'config-key' },
+    apiKeyEnv: { get: () => 'ALIYUN_API_KEY' },
+    model: { get: () => 'qwen3.8-omni-flash' },
+    reasoningEffort: { get: () => 'none' },
+    autoAnalyzeAttachments: { get: () => false },
+    debug: { get: () => false },
+  });
+  assert.equal(liveCfg.baseURL, 'https://example.test/compatible-mode/v1');
+  assert.equal(liveCfg.apiKey, 'config-key');
+  assert.equal(liveCfg.autoAnalyzeAttachments, false);
+  assert.equal(resolveApiKey('config-key', ['ALIYUN_API_KEY']).source, 'config.plugin-page');
+  assert.equal(resolveApiKey('config-key', ['ALIYUN_API_KEY']).value, 'config-key');
+  console.log('Schemastery accessor 与页面 Key 优先级读取正常');
 
   const hasAudio = await exists(audioPath);
   const hasVideo = await exists(videoPath);

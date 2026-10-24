@@ -9,7 +9,7 @@ import { randomUUID } from 'node:crypto';
 import { promises as fsp } from 'node:fs';
 import path from 'node:path';
 import { analyzeMedia, autoPrompt, NO_API_KEY_MESSAGE } from './analyze.js';
-import { normalizeConfig } from './config.js';
+import { Config, normalizeConfig } from './config.js';
 import { resolveApiKey } from './key.js';
 import {
   classifyByName,
@@ -20,6 +20,7 @@ import {
 
 export const name = 'qwen-omni-bridge';
 export const inject = ['tools', 'systemPrompt', 'attachments', 'workingDirectory'];
+export { Config };
 
 const TOOL_NAME = 'omni_media';
 
@@ -123,10 +124,11 @@ function validateToolArgs(args) {
 
 /** 注册工具 + 自动路由 + 系统提示。 */
 export function apply(ctx, rawConfig) {
-  const cfg = normalizeConfig(rawConfig);
+  const initial = normalizeConfig(rawConfig);
+  const currentConfig = () => normalizeConfig(rawConfig);
   const processed = new Set();
   const debug = (...args) => {
-    if (cfg.debug) console.log('[qwen-omni-bridge]', ...args);
+    if (currentConfig().debug) console.log('[qwen-omni-bridge]', ...args);
   };
 
   ctx.tools.register({
@@ -165,10 +167,11 @@ export function apply(ctx, rawConfig) {
         return [{ type: 'text', text: `[${value.model}] ${names}\n\n${value.answer}${note}` }];
       },
     },
-    timeoutMs: cfg.timeoutMs,
+    timeoutMs: initial.timeoutMs,
     isConcurrencySafe: () => false,
     async execute(args, exec) {
       const { paths, prompt, effort } = validateToolArgs(args);
+      const cfg = currentConfig();
       let cwd;
       if (exec.agent) {
         cwd = await ctx.workingDirectory.ensure(exec.agent, exec.signal).catch(() => undefined);
@@ -211,6 +214,7 @@ export function apply(ctx, rawConfig) {
 
   ctx.on('agent/pre-step', async (payload, next) => {
     const decision = await next();
+    const cfg = currentConfig();
     if (!cfg.autoAnalyzeAttachments || decision.kind !== 'enter') return decision;
     const { signal } = payload;
     if (!Array.isArray(decision.messages) || decision.messages.length === 0) return decision;
@@ -251,7 +255,7 @@ export function apply(ctx, rawConfig) {
     }
     if (targets.length === 0) return decision;
 
-    const apiKey = resolveApiKey(cfg.apiKeyEnv);
+    const apiKey = resolveApiKey(cfg.apiKey, cfg.apiKeyEnv);
     const additions = new Map();
     for (const target of targets) {
       for (const file of target.files) processed.add(file.key);
@@ -320,10 +324,10 @@ export function apply(ctx, rawConfig) {
   });
 
   debug('插件已加载', {
-    model: cfg.model,
-    baseURL: cfg.baseURL,
-    autoAnalyze: cfg.autoAnalyzeAttachments,
-    attachmentsRoot: cfg.attachmentsRoot,
+    model: initial.model,
+    baseURL: initial.baseURL,
+    autoAnalyze: initial.autoAnalyzeAttachments,
+    attachmentsRoot: initial.attachmentsRoot,
   });
 }
 
