@@ -51,28 +51,23 @@ pwsh -File scripts\sync-to-dsh.ps1
 
 ## 插件管理页面配置
 
-安装后打开 DSH 的「插件」页，进入 **Qwen 全模态桥接** 的包详情，在「包含的组件」中该行末尾点击 **配置**（齿轮/配置按钮）即可打开表单。若刚安装完没有看到该按钮，刷新一次页面以加载插件的 Client 端配置页。
+安装后打开 DSH 的「插件」页，进入 **Qwen 全模态桥接** 的包详情。配置可用时，「包含的组件」中该组件行的标题会变成带 `›` 的按钮；点击标题即可进入配置页。若刚安装完标题还不可点击，刷新一次页面（建议 Ctrl+Shift+R）以加载插件的 Client 端配置页；仍不行则重启一次 DSH。
 
-表单字段使用 Schemastery `volatile`，修改后在下一次工具调用或 `pre-step` 时生效（`timeoutMs` 除外，它注册在工具定义上，需重载插件）。
+页面表单字段使用 Schemastery `volatile`，修改后在下一次工具调用或 `pre-step` 时生效。
 
-| 字段 | 默认值 | 说明 |
+| 页面字段 | 默认值 | 说明 |
 | --- | --- | --- |
 | `baseURL` | 上述接入点 | OpenAI 兼容接口根地址 |
-| `apiKey` | 空 | API Key；留空则读取环境变量 |
-| `apiKeyEnv` | `ALIYUN_API_KEY` | 页面 Key 留空时优先读取的环境变量名 |
+| `apiKey` | 空 | API Key；留空则读取环境变量；已配置时留空保持不变 |
 | `model` | `qwen3.8-omni-flash` | 模型名 |
 | `reasoningEffort` | `low` | `none`/`low`/`medium`/`xhigh` |
 | `autoAnalyzeAttachments` | `true` | 是否自动解析用户上传的音视频附件 |
 | `allowOutsideWorkspace` | `false` | 是否允许工具读取工作区和 DSH 附件目录之外的路径 |
-| `autoAnalyzeMaxBytes` | `8000000` | 自动解析的媒体大小上限 |
-| `autoAnalyzeTimeoutMs` | `120000` | 自动解析超时（毫秒） |
-| `autoMaxOutputChars` | `12000` | 自动解析结果写入上下文的最大字符数 |
-| `maxOutputChars` | `40000` | 工具结果最大字符数 |
-| `timeoutMs` | `600000` | 工具调用超时（毫秒）；修改后需重载插件 |
-| `maxSegments` | `12` | 单个媒体最多切分段数 |
-| `ffmpegPath` | `ffmpeg` | ffmpeg 可执行文件路径 |
-| `ffprobePath` | `ffprobe` | ffprobe 可执行文件路径 |
 | `debug` | `false` | 打印调试日志（不含密钥） |
+
+以下高级字段在 Host `Config` schema 中仍可配置，但当前页面表单未渲染，可通过 `cordis.patch.yml` 或插件行配置覆盖：
+
+`apiKeyEnv`、`autoAnalyzeMaxBytes`、`autoAnalyzeTimeoutMs`、`autoMaxOutputChars`、`maxOutputChars`、`timeoutMs`、`maxSegments`、`ffmpegPath`、`ffprobePath`。
 
 `cordis.patch.yml` 中给出了同样的默认值；插件管理页面的修改会作为 profile 覆盖层保存。
 

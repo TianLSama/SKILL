@@ -101,7 +101,7 @@ const mirror = {
       writable: true,
       namespaces: [
         {
-          ns: 'include:qwen-omni-bridge',
+          ns: 'qwen-omni-bridge',
           secrets: [{ path: ['apiKey'], set: true }],
         },
       ],
@@ -119,12 +119,12 @@ const ctx = {
   },
   configForms: {
     get: (id) => {
-      assert.equal(id, 'include:qwen-omni-bridge');
+      assert.equal(id, 'qwen-omni-bridge');
       return scope;
     },
     describe: () => mirror,
     whileServed: (names, register) => {
-      assert.equal(names.join(','), 'include:qwen-omni-bridge');
+      assert.equal(names.join(','), 'qwen-omni-bridge');
       return register(new Set(names));
     },
   },

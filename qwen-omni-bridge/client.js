@@ -19,7 +19,8 @@ window.__ModuleLoader__.load({
     } = require('@deepseek-ai/dsh-client-ui-primitives');
 
     const NS = 'settings.qwenOmni';
-    const ENTRY_ID = 'include:qwen-omni-bridge';
+    // settings.describe() 的 ns 是 bundle patch 行的 id，不是 Loader 的 include: 条目 id。
+    const ENTRY_ID = 'qwen-omni-bridge';
     const ROW_KEY = '@local/qwen-omni-bridge#qwen-omni-bridge';
 
     const zh = {
