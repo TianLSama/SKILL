@@ -3,7 +3,8 @@ import os from 'node:os';
 import path from 'node:path';
 import z from '@deepseek-ai/schemastery';
 
-export const DEFAULT_BASE_URL = 'https://ws-srp61mkj9bp9w0ct.cn-beijing.maas.aliyuncs.com/compatible-mode/v1';
+export const DEFAULT_BASE_URL = '';
+export const BASE_URL_ENV = 'ALIYUN_BASE_URL';
 export const DEFAULT_MODEL = 'qwen3.8-omni-flash';
 export const DEFAULT_API_KEY_ENV = ['ALIYUN_API_KEY', 'DASHSCOPE_API_KEY'];
 export const REASONING_EFFORTS = ['none', 'low', 'medium', 'xhigh'];
@@ -17,7 +18,9 @@ export const Config = z
     baseURL: z
       .string()
       .default(DEFAULT_BASE_URL)
-      .description('OpenAI 兼容接入点，通常以 /compatible-mode/v1 结尾。')
+      .description(
+        'OpenAI 兼容接入点，通常以 /compatible-mode/v1 结尾；留空时读取环境变量 ALIYUN_BASE_URL。',
+      )
       .volatile(),
     apiKey: z
       .string()
@@ -124,6 +127,17 @@ function textOr(value, fallback) {
   return typeof value === 'string' && value.trim() ? value.trim() : fallback;
 }
 
+/**
+ * 接入点优先取页面/配置值，其次环境变量 ALIYUN_BASE_URL。
+ * 仓库不内置专属业务空间地址，未配置时返回空字符串，由调用方给出明确错误。
+ */
+function resolveBaseURL(value) {
+  const fromConfig = typeof value === 'string' && value.trim() ? value.trim() : '';
+  const fromEnv =
+    typeof process.env[BASE_URL_ENV] === 'string' ? process.env[BASE_URL_ENV].trim() : '';
+  return (fromConfig || fromEnv).replace(/\/+$/, '');
+}
+
 /** 读取普通对象字段，或 Schemastery volatile 字段的 `.get()`。 */
 function field(raw, name) {
   const value = raw?.[name];
@@ -168,7 +182,7 @@ export function normalizeConfig(raw) {
       : 'ALIYUN_API_KEY';
 
   return {
-    baseURL: textOr(baseURLValue, DEFAULT_BASE_URL).replace(/\/+$/, ''),
+    baseURL: resolveBaseURL(baseURLValue),
     model: textOr(modelValue, DEFAULT_MODEL),
     mediaPolicy: textOr(mediaPolicyValue, 'omni-only'),
     apiKey: typeof apiKeyValue === 'string' ? apiKeyValue.trim() : '',

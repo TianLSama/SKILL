@@ -8,7 +8,7 @@
       config:
         apiKey: ''
         apiKeyEnv: ALIYUN_API_KEY
-        baseURL: https://ws-srp61mkj9bp9w0ct.cn-beijing.maas.aliyuncs.com/compatible-mode/v1
+        baseURL: ''
         model: qwen3.8-omni-flash
         mediaPolicy: omni-only
         reasoningEffort: low

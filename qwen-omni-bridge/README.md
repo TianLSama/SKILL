@@ -16,14 +16,17 @@
 
 ## 接入点与模型
 
-接入点、模型名等由使用者在插件管理页或部署配置中填写；README 只保留占位示例，不记录真实接入点。
+接入点、模型名等由使用者在插件管理页或部署配置中填写；仓库只保留占位示例，不记录真实接入点。
 
 | 项 | 值 |
 | --- | --- |
 | Base URL | `https://<workspace-id>.<region>.maas.aliyuncs.com/compatible-mode/v1`（占位示例，按实际填写） |
+| Base URL 环境变量 | `ALIYUN_BASE_URL`（页面未填写时回退） |
 | 模型 | `qwen3.8-omni-flash` |
 | 协议 | OpenAI 兼容 `POST /chat/completions`，`modalities: ["text"]` |
 | 默认 Key 环境变量 | `ALIYUN_API_KEY`，其次 `DASHSCOPE_API_KEY` |
+
+接入点解析顺序：插件管理页/配置中的 `baseURL` → 环境变量 `ALIYUN_BASE_URL`。两者都为空时，`omni_media` 会返回明确的“未配置接入点”错误，不会请求默认地址。
 
 ## API Key 解析顺序
 
@@ -51,6 +54,8 @@ plugin_manager install_bundle  target = %USERPROFILE%\.dsh\plugins\qwen-omni-bri
 
 其中 `%USERPROFILE%` 展开为当前 Windows 用户目录。
 
+bundle patch 中的 `baseURL` 默认为空，首次安装后需要在插件管理页填写，或设置环境变量 `ALIYUN_BASE_URL`。
+
 安装后 bundle 会写入当前 profile，并在 Host 插件树中插入 `qwen-omni-bridge` 行。无需重启；新会话即可看到 `omni_media` 工具。可用 `cordis_inspect_query` 的 `Config.listConfigs` / `Tool.listTools` 确认激活。
 
 更新插件时，把源码同步到运行时副本后重新安装：
@@ -68,7 +73,7 @@ pwsh -File scripts\sync-to-dsh.ps1
 
 | 页面字段 | 默认值 | 说明 |
 | --- | --- | --- |
-| `baseURL` | 部署时配置 | OpenAI 兼容接口根地址（通常以 `/compatible-mode/v1` 结尾） |
+| `baseURL` | 空 | OpenAI 兼容接口根地址；首次使用需填写，或设置环境变量 `ALIYUN_BASE_URL` |
 | `apiKey` | 空 | API Key；留空则读取环境变量；已配置时留空保持不变 |
 | `model` | `qwen3.8-omni-flash` | 模型名 |
 | `reasoningEffort` | `low` | `none`/`low`/`medium`/`xhigh` |

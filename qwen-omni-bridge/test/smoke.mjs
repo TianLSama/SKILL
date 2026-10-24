@@ -70,12 +70,19 @@ function fakeContext(cwd = process.cwd()) {
 async function main() {
   log('环境与配置读取');
   const key = resolveApiKey(undefined, ['ALIYUN_API_KEY', 'DASHSCOPE_API_KEY']);
-  if (!key) {
-    console.error('未找到 API Key，测试终止。');
-    process.exitCode = 1;
-    return;
+  if (key) {
+    console.log(`已找到密钥，来源：${key.source}（值已隐藏）`);
+  } else {
+    console.log('未找到 API Key，跳过真实 API 测试');
   }
-  console.log(`已找到密钥，来源：${key.source}（值已隐藏）`);
+
+  const apiBaseURL = typeof process.env.ALIYUN_BASE_URL === 'string' ? process.env.ALIYUN_BASE_URL.trim() : '';
+  if (apiBaseURL) {
+    console.log('已找到接入点 ALIYUN_BASE_URL（值已隐藏）');
+  } else {
+    console.log('未设置 ALIYUN_BASE_URL，跳过真实 API 测试');
+  }
+  const canCallApi = Boolean(key && apiBaseURL);
 
   const liveCfg = normalizeConfig({
     baseURL: { get: () => 'https://example.test/compatible-mode/v1/' },
@@ -92,7 +99,8 @@ async function main() {
   assert.equal(liveCfg.mediaPolicy, 'omni-only');
   assert.equal(liveCfg.autoAnalyzeAttachments, false);
   assert.equal(normalizeConfig({}).mediaPolicy, 'omni-only');
-  console.log('mediaPolicy=omni-only 已固定');
+  if (!process.env.ALIYUN_BASE_URL) assert.equal(normalizeConfig({}).baseURL, '');
+  console.log('mediaPolicy=omni-only 已固定；baseURL 无内置默认值');
   assert.equal(resolveApiKey('config-key', ['ALIYUN_API_KEY']).source, 'config.plugin-page');
   assert.equal(resolveApiKey('config-key', ['ALIYUN_API_KEY']).value, 'config-key');
   console.log('Schemastery accessor 与页面 Key 优先级读取正常');
@@ -102,6 +110,7 @@ async function main() {
   console.log(`测试素材：audio=${hasAudio} video=${hasVideo}`);
 
   const cfg = normalizeConfig({
+    baseURL: apiBaseURL,
     debug: true,
     reasoningEffort: 'none',
     autoAnalyzeMaxBytes: 8_000_000,
@@ -109,7 +118,7 @@ async function main() {
     timeoutMs: 300_000,
   });
 
-  if (hasAudio) {
+  if (canCallApi && hasAudio) {
     log('音频转写');
     const result = await analyzeMedia({
       inputs: [{ path: audioPath, kindHint: 'audio' }],
@@ -123,7 +132,7 @@ async function main() {
     assert.ok(result.media[0].kind === 'audio');
   }
 
-  if (hasVideo) {
+  if (canCallApi && hasVideo) {
     log('视频理解');
     const result = await analyzeMedia({
       inputs: [{ path: videoPath, kindHint: 'video' }],
@@ -152,7 +161,7 @@ async function main() {
   assert.match(rendered[0].text, /测试答案/);
   await assert.rejects(() => tool.execute({ paths: [] }, { agent: { id: 'a' }, signal: new AbortController().signal }));
 
-  if (hasAudio) {
+  if (canCallApi && hasAudio) {
     log('工具真实执行');
     const value = await tool.execute(
       { paths: [audioPath], prompt: '只回答：音频里提到的气温是多少度？' },
@@ -163,7 +172,7 @@ async function main() {
     assert.equal(value.media[0].kind, 'audio');
   }
 
-  if (hasAudio) {
+  if (canCallApi && hasAudio) {
     log('pre-step 自动路由');
     const autoCtx = fakeContext(workspace);
     autoCtx.attachments.fileHostPath = () => audioPath;
