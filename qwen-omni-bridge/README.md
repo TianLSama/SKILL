@@ -16,9 +16,11 @@
 
 ## 接入点与模型
 
+接入点、模型名等由使用者在插件管理页或部署配置中填写；README 只保留占位示例，不记录真实接入点。
+
 | 项 | 值 |
 | --- | --- |
-| Base URL | `https://ws-srp61mkj9bp9w0ct.cn-beijing.maas.aliyuncs.com/compatible-mode/v1` |
+| Base URL | `https://<workspace-id>.<region>.maas.aliyuncs.com/compatible-mode/v1`（占位示例，按实际填写） |
 | 模型 | `qwen3.8-omni-flash` |
 | 协议 | OpenAI 兼容 `POST /chat/completions`，`modalities: ["text"]` |
 | 默认 Key 环境变量 | `ALIYUN_API_KEY`，其次 `DASHSCOPE_API_KEY` |
@@ -38,14 +40,16 @@
 
 | 用途 | 路径 |
 | --- | --- |
-| 开发源码 | `E:\Work\coding\SKILL\qwen-omni-bridge` |
-| DSH 运行时副本 | `C:\Users\m1571\.dsh\plugins\qwen-omni-bridge` |
+| 开发源码 | 本仓库的 `qwen-omni-bridge/` 目录 |
+| DSH 运行时副本 | `%USERPROFILE%\.dsh\plugins\qwen-omni-bridge` |
 
 安装时指向运行时副本，而不是工作区：
 
 ```text
-plugin_manager install_bundle  target = C:\Users\m1571\.dsh\plugins\qwen-omni-bridge
+plugin_manager install_bundle  target = %USERPROFILE%\.dsh\plugins\qwen-omni-bridge
 ```
+
+其中 `%USERPROFILE%` 展开为当前 Windows 用户目录。
 
 安装后 bundle 会写入当前 profile，并在 Host 插件树中插入 `qwen-omni-bridge` 行。无需重启；新会话即可看到 `omni_media` 工具。可用 `cordis_inspect_query` 的 `Config.listConfigs` / `Tool.listTools` 确认激活。
 
@@ -64,7 +68,7 @@ pwsh -File scripts\sync-to-dsh.ps1
 
 | 页面字段 | 默认值 | 说明 |
 | --- | --- | --- |
-| `baseURL` | 上述接入点 | OpenAI 兼容接口根地址 |
+| `baseURL` | 部署时配置 | OpenAI 兼容接口根地址（通常以 `/compatible-mode/v1` 结尾） |
 | `apiKey` | 空 | API Key；留空则读取环境变量；已配置时留空保持不变 |
 | `model` | `qwen3.8-omni-flash` | 模型名 |
 | `reasoningEffort` | `low` | `none`/`low`/`medium`/`xhigh` |
@@ -86,7 +90,7 @@ pwsh -File scripts\sync-to-dsh.ps1
 
 ```text
 omni_media(
-  paths: ["E:\\videos\\meeting.mp4"],
+  paths: ["D:\\media\\meeting.mp4"],
   prompt: "逐字转写会议内容，并按发言人整理待办事项。"
 )
 ```
@@ -94,7 +98,7 @@ omni_media(
 工具返回：
 
 ```text
-[qwen3.8-omni-flash] 视频 E:\videos\meeting.mp4
+[qwen3.8-omni-flash] 视频 D:\media\meeting.mp4
 
 （模型输出：概述、时间线、屏幕文字、语音转写……）
 ```
@@ -151,7 +155,7 @@ DashScope 的 OpenAI 兼容接口对 Base64 媒体有两个约束：
 
 在 Windows + DSH 0.2.1-rc.2 环境下已验证：
 
-- 接入点 `GET /models` 可列出 `qwen3.8-omni-flash`；API Key 有效。
+- 所配置的接入点 `GET /models` 可列出 `qwen3.8-omni-flash`；API Key 有效。
 - 8 秒中文 TTS WAV：逐字转写与语气判断正确。
 - 4 秒 MP4（蓝色背景 + 两行中文）：画面描述与 OCR 正确。
 - 非流式请求 `stream: false` 可用，响应为 `choices[0].message.content` 字符串。
