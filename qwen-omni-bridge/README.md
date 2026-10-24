@@ -1,5 +1,7 @@
 # Qwen 全模态桥接（qwen-omni-bridge）
 
+[![](https://img.shields.io/badge/powered_by-dsh-4D6BFE?style=flat-square&logo=deepseek&logoColor=white)](https://github.com/deepseek-ai/deepseek-harness)
+
 把音频、视频模态的输入路由到 **qwen3.8-omni-flash**，把文字结果返回给主模型（DeepSeek Harness 中的 deepseek-flash），让主模型能够“理解”音视频。提供两种使用方式：
 
 1. **按需调用**：注册 `omni_media` 工具。主模型遇到音视频文件时主动调用，传入路径和问题，拿到转写/画面描述/问答结果。
@@ -196,5 +198,3 @@ qwen-omni-bridge/
 ├─ scripts/sync-to-dsh.ps1  # 同步到 DSH 运行时副本
 └─ test/smoke.mjs           # 本地冒烟测试
 ```
-
-[![](https://img.shields.io/badge/powered_by-dsh-4D6BFE?style=flat-square&logo=deepseek&logoColor=white)](https://github.com/deepseek-ai/deepseek-harness)
