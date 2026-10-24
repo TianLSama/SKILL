@@ -23,7 +23,7 @@ Write-Host "同步源：$source"
 Write-Host "目标：  $dest"
 New-Item -ItemType Directory -Force $dest | Out-Null
 
-foreach ($file in @('index.js', 'package.json', 'cordis.patch.yml', 'icon.svg', 'README.md')) {
+foreach ($file in @('index.js', 'client.js', 'package.json', 'cordis.patch.yml', 'icon.svg', 'README.md')) {
   Copy-Item -LiteralPath (Join-Path $source $file) -Destination (Join-Path $dest $file) -Force
 }
 foreach ($dir in @('lib', 'locale')) {

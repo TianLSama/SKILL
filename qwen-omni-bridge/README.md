@@ -51,7 +51,9 @@ pwsh -File scripts\sync-to-dsh.ps1
 
 ## 插件管理页面配置
 
-安装后可在 DSH 的插件管理/设置页面直接编辑以下字段。字段使用 Schemastery `volatile`，修改后在下一次工具调用或 `pre-step` 时生效（`timeoutMs` 除外，它注册在工具定义上，需重载插件）。
+安装后打开 DSH 的「插件」页，进入 **Qwen 全模态桥接** 的包详情，在「包含的组件」中该行末尾点击 **配置**（齿轮/配置按钮）即可打开表单。若刚安装完没有看到该按钮，刷新一次页面以加载插件的 Client 端配置页。
+
+表单字段使用 Schemastery `volatile`，修改后在下一次工具调用或 `pre-step` 时生效（`timeoutMs` 除外，它注册在工具定义上，需重载插件）。
 
 | 字段 | 默认值 | 说明 |
 | --- | --- | --- |
@@ -158,13 +160,14 @@ DashScope 的 OpenAI 兼容接口对 Base64 媒体有两个约束：
 
 - 自动路由的完整 Web UI 上传链路需要真实上传附件；已用单元方式验证 pre-step 消息注入逻辑（真实 API + 假 ctx），端到端上传未在无浏览器控制的情况下验证。
 - 超长视频（> 48 分钟，12 段上限）的质量与耗时。
-- 插件管理页面表单的实际渲染（无浏览器控制），已通过 `Config` schema 和默认值校验。
+- 客户端配置页已实现并通过本地 `client smoke` 测试（注册键 `@local/qwen-omni-bridge#qwen-omni-bridge`）；当前打开的页面需要刷新一次才会加载新的 Client 模块，尚未在浏览器中目视确认表单渲染。
 
 ## 文件结构
 
 ```text
 qwen-omni-bridge/
-├─ index.js                 # Loader 入口
+├─ index.js                 # Host Loader 入口
+├─ client.js                # Client 端配置页（注册 plugins.row.config）
 ├─ lib/
 │  ├─ plugin.js             # 工具注册、pre-step 自动路由、系统提示
 │  ├─ config.js             # Config schema、配置归一化
