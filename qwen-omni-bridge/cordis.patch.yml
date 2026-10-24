@@ -1,6 +1,7 @@
 # Qwen 全模态桥接：把音频/视频路由到 qwen3.8-omni-flash。
 # 安装为 profile bundle 后，这一行会插入 Host 插件树。
 # 这些字段都可以在 DSH 的插件管理页面直接修改；apiKey 留空时读取环境变量。
+# mediaPolicy 固定为 omni-only：音视频理解全部交给外部模型，主模型只做调度与整合。
 - insert:
     - id: qwen-omni-bridge
       name: '@local/qwen-omni-bridge'
@@ -9,5 +10,6 @@
         apiKeyEnv: ALIYUN_API_KEY
         baseURL: https://ws-srp61mkj9bp9w0ct.cn-beijing.maas.aliyuncs.com/compatible-mode/v1
         model: qwen3.8-omni-flash
+        mediaPolicy: omni-only
         reasoningEffort: low
         autoAnalyzeAttachments: true

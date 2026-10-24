@@ -82,13 +82,17 @@ async function main() {
     apiKey: { get: () => 'config-key' },
     apiKeyEnv: { get: () => 'ALIYUN_API_KEY' },
     model: { get: () => 'qwen3.8-omni-flash' },
+    mediaPolicy: { get: () => 'omni-only' },
     reasoningEffort: { get: () => 'none' },
     autoAnalyzeAttachments: { get: () => false },
     debug: { get: () => false },
   });
   assert.equal(liveCfg.baseURL, 'https://example.test/compatible-mode/v1');
   assert.equal(liveCfg.apiKey, 'config-key');
+  assert.equal(liveCfg.mediaPolicy, 'omni-only');
   assert.equal(liveCfg.autoAnalyzeAttachments, false);
+  assert.equal(normalizeConfig({}).mediaPolicy, 'omni-only');
+  console.log('mediaPolicy=omni-only 已固定');
   assert.equal(resolveApiKey('config-key', ['ALIYUN_API_KEY']).source, 'config.plugin-page');
   assert.equal(resolveApiKey('config-key', ['ALIYUN_API_KEY']).value, 'config-key');
   console.log('Schemastery accessor 与页面 Key 优先级读取正常');
@@ -136,6 +140,7 @@ async function main() {
   log('工具注册与参数校验');
   const ctx = fakeContext(workspace);
   apply(ctx, { autoAnalyzeAttachments: false, reasoningEffort: 'none', debug: true });
+  assert.throws(() => apply(fakeContext(workspace), { mediaPolicy: 'off' }), /omni-only/);
   assert.equal(ctx.state.tools.length, 1, '应注册一个工具');
   const tool = ctx.state.tools[0];
   assert.equal(tool.name, 'omni_media');

@@ -7,6 +7,13 @@
 
 插件是 Host-only bundle，唯一外部依赖是 `@deepseek-ai/schemastery`（用于插件管理页面的配置表单）。
 
+## 职责分工（omni-only，固定策略）
+
+- **外部模型负责感知**：所有音频、视频内容——语音转写、说话人、声音事件、画面、人物动作、屏幕文字、公式、图表、曲线、镜头变化——都由 `qwen3.8-omni-flash` 通过 `omni_media` 理解。
+- **主模型负责调度与整合**：理解用户意图、拆分问题、决定让 omni 看/听哪一段、整合结果并回答。
+- **禁止**用 `ffmpeg` 抽帧 + `read_image`、截图 OCR 或其他主模型视觉方式替代视频理解。用户直接提供的静态图片仍可直接读取；但“从视频中提取的帧/截图”属于视频理解，必须交给 `omni_media`。
+- 该策略固定为 `mediaPolicy: omni-only`，同时写入插件系统提示和 DSH 全局 `AGENTS.md`；插件管理页面的配置页也会显示策略提示。
+
 ## 接入点与模型
 
 | 项 | 值 |
@@ -68,6 +75,8 @@ pwsh -File scripts\sync-to-dsh.ps1
 以下高级字段在 Host `Config` schema 中仍可配置，但当前页面表单未渲染，可通过 `cordis.patch.yml` 或插件行配置覆盖：
 
 `apiKeyEnv`、`autoAnalyzeMaxBytes`、`autoAnalyzeTimeoutMs`、`autoMaxOutputChars`、`maxOutputChars`、`timeoutMs`、`maxSegments`、`ffmpegPath`、`ffprobePath`。
+
+`mediaPolicy` 固定为 `omni-only`；配置为其他值会在插件激活时被拒绝。配置页顶部会显示策略提示。
 
 `cordis.patch.yml` 中给出了同样的默认值；插件管理页面的修改会作为 profile 覆盖层保存。
 
@@ -150,12 +159,14 @@ DashScope 的 OpenAI 兼容接口对 Base64 媒体有两个约束：
 - `Config` schema 可导出，`normalizeConfig` 能读取 Schemastery `volatile` 字段与页面 Key；`Config.listConfigs` 状态为 `schema`，`apiKey` 带 `role: secret`。
 - profile 依赖已指向 `~/.dsh/plugins/qwen-omni-bridge` 运行时副本；移动/改名工作区不影响插件加载。
 - 通过子代理真实调用 `omni_media` 可返回视频文字；重新安装到运行时副本后再次调用成功返回音频气温（页面 Key 留空，走环境变量回退）。
+- `mediaPolicy: omni-only` 已写入插件 system prompt、Config schema/`cordis.patch.yml`、Client 配置页 banner 和 `~/.dsh/AGENTS.md`；配置为其他值会拒绝激活。
 
 未完成/受限验证：
 
 - 自动路由的完整 Web UI 上传链路需要真实上传附件；已用单元方式验证 pre-step 消息注入逻辑（真实 API + 假 ctx），端到端上传未在无浏览器控制的情况下验证。
 - 超长视频（> 48 分钟，12 段上限）的质量与耗时。
 - 客户端配置页已实现并通过本地 `client smoke` 测试（注册键 `@local/qwen-omni-bridge#qwen-omni-bridge`）；当前打开的页面需要刷新一次才会加载新的 Client 模块，尚未在浏览器中目视确认表单渲染。
+- 策略说明：此前“视频最后曲线”一问使用了 `ffmpeg` 抽帧 + `read_image`（旧做法）；现在 `mediaPolicy: omni-only` 已明确禁止该路径，后续视频内容（含画面、公式、曲线）应通过 `omni_media` 分析。
 
 ## 文件结构
 

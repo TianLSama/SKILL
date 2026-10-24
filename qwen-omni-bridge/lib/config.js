@@ -35,6 +35,11 @@ export const Config = z
       .default(DEFAULT_MODEL)
       .description('模型名称，默认 qwen3.8-omni-flash。')
       .volatile(),
+    mediaPolicy: z
+      .string()
+      .default('omni-only')
+      .description('固定为 omni-only：音视频理解全部交给 qwen3.8-omni-flash；主模型只负责调度与整合。')
+      .volatile(),
     reasoningEffort: z
       .union(REASONING_EFFORTS)
       .default('low')
@@ -150,6 +155,7 @@ export function normalizeConfig(raw) {
   const reasoningEffort = REASONING_EFFORTS.includes(reasoningValue) ? reasoningValue : 'low';
   const baseURLValue = field(cfg, 'baseURL');
   const modelValue = field(cfg, 'model');
+  const mediaPolicyValue = field(cfg, 'mediaPolicy');
   const apiKeyValue = field(cfg, 'apiKey');
   const apiKeyEnvValue = field(cfg, 'apiKeyEnv');
   const ffmpegValue = field(cfg, 'ffmpegPath');
@@ -164,6 +170,7 @@ export function normalizeConfig(raw) {
   return {
     baseURL: textOr(baseURLValue, DEFAULT_BASE_URL).replace(/\/+$/, ''),
     model: textOr(modelValue, DEFAULT_MODEL),
+    mediaPolicy: textOr(mediaPolicyValue, 'omni-only'),
     apiKey: typeof apiKeyValue === 'string' ? apiKeyValue.trim() : '',
     apiKeyEnv: [...new Set([primaryEnv, ...DEFAULT_API_KEY_ENV])],
     reasoningEffort,

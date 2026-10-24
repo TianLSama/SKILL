@@ -174,6 +174,6 @@ const page = component({
 });
 assert.ok(page.props, 'page view 应渲染 SettingsForm');
 assert.ok(page.props.labels, 'SettingsForm 应收到 labels');
-assert.ok(page.props.children.length >= 3, '应包含多个字段');
+assert.ok(page.props.children.length >= 8, '应包含策略提示和多个字段');
 
 console.log('client smoke OK: plugins.row.config @local/qwen-omni-bridge#qwen-omni-bridge');

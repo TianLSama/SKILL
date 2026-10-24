@@ -25,6 +25,8 @@ window.__ModuleLoader__.load({
 
     const zh = {
       summary: '配置接入点、API Key、模型和自动解析选项。',
+      policyTitle: '音视频理解策略：omni-only',
+      policyText: '所有音频、视频内容（含画面、人物动作、屏幕文字、公式、图表、曲线）均由 qwen3.8-omni-flash 解析；主模型只负责调度、拆分问题和整合结果，不使用抽帧/截图读图替代视频理解。',
       baseURL: '接入点',
       baseURLHint: 'OpenAI 兼容接口根地址，通常以 /compatible-mode/v1 结尾。',
       apiKey: 'API Key',
@@ -54,6 +56,8 @@ window.__ModuleLoader__.load({
 
     const en = {
       summary: 'Configure the endpoint, API key, model, and auto-analysis options.',
+      policyTitle: 'Audio/video policy: omni-only',
+      policyText: 'All audio and video content (frames, actions, on-screen text, formulas, charts, curves) is analyzed by qwen3.8-omni-flash. The main model only dispatches, splits questions, and integrates results; it must not substitute frame extraction or screenshot OCR for video understanding.',
       baseURL: 'Endpoint',
       baseURLHint: 'OpenAI-compatible base URL, usually ending in /compatible-mode/v1.',
       apiKey: 'API key',
@@ -229,6 +233,27 @@ window.__ModuleLoader__.load({
           onSave: props.save,
           onDiscard: props.discard,
         },
+          h('div', {
+            style: {
+              border: '0.5px solid var(--dsw-alias-border-l3)',
+              borderRadius: 8,
+              background: 'var(--dsw-alias-bg-layer-1)',
+              padding: '10px 12px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 4,
+            },
+          },
+            h('strong', { style: { fontSize: 13, color: 'var(--dsw-alias-label-primary)' } }, t('policyTitle')),
+            h('p', {
+              style: {
+                margin: 0,
+                fontSize: 12,
+                lineHeight: 1.5,
+                color: 'var(--dsw-alias-label-secondary)',
+              },
+            }, t('policyText')),
+          ),
           h(SettingsValueField, fieldProps(t, state.baseURL, 'qwen-omni-base-url', 'baseURL', t('baseURL'), t('baseURLHint'), state.writable, props)),
           h(SettingsSecretField, {
             id: 'qwen-omni-api-key',

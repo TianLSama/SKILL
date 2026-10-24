@@ -24,16 +24,18 @@ export { Config };
 
 const TOOL_NAME = 'omni_media';
 
-const SECTION_TEXT = `## 音视频理解（${TOOL_NAME}）
+const SECTION_TEXT = `## 音视频理解策略（omni-only）
 
-你无法直接“看”或“听”音视频。用户上传的音视频会以文件句柄的形式出现（文件名、字节数、只读路径），内容本身不会进入你的上下文。
+音视频理解**全部**交给外部模型 qwen3.8-omni-flash；你只负责调度与整合。
 
-- 当用户上传或提到音频、视频，或你需要了解其中内容时，调用 \`${TOOL_NAME}\` 工具，传入文件路径和你的问题。该工具会把媒体路由给 qwen3.8-omni-flash，并把文字分析返回给你。
-- 用户上传的音视频通常已经自动解析：插件会在用户消息之后插入一条 \`<omni-media-analysis>\` 上下文消息。可以直接使用，也可以用 \`${TOOL_NAME}\` 追问更细的内容。
-- 工具支持本地路径、当前工作目录相对路径和 http(s) URL。大于约 7MB 的文件会自动压缩/分段；长视频可能需要较长时间。
-- 如果自动解析失败或文件过大，按提示调用 \`${TOOL_NAME}\` 重试。`;
+- 你的职责：理解用户意图、拆分问题、决定让 omni 看/听哪一段、整合结果并回答。
+- 所有音频、视频内容（包括画面、人物动作、屏幕文字、公式、图表、曲线、镜头变化）都必须通过 \`${TOOL_NAME}\` 获取。禁止用 ffmpeg 抽帧、截图、\`read_image\` 或其他主模型视觉方式替代视频理解。
+- 用户直接提供的静态图片仍可直接读取；但从视频中取出的帧/截图属于视频理解，必须交给 \`${TOOL_NAME}\`。
+- 用户上传的音视频通常已自动解析，结果以 \`<omni-media-analysis>\` 出现在用户消息之后；可直接使用，也可用 \`${TOOL_NAME}\` 追问。
+- 如果结果不够，继续用 \`${TOOL_NAME}\` 追问（可指定时间段、画面或具体问题）；不要自行抽帧兜底。自动解析失败或文件过大时，按提示调用 \`${TOOL_NAME}\`。
+- 工具支持本地路径、工作区相对路径和 http(s) URL；大于约 7MB 会自动压缩/分段。`;
 
-const TOOL_DESCRIPTION = `使用 Qwen3.8-Omni-Flash 理解音频、视频或图片。主模型无法直接解析音视频：当用户上传或提到 .mp3/.wav/.m4a/.aac/.mp4/.mov/.mkv 等文件，或你需要知道其中内容时，调用本工具。传入本地路径（绝对路径或当前工作目录相对路径）或 http(s) URL，以及你的问题；返回模型对该媒体的文字分析。单文件超过约 7MB 时会自动压缩/分段，长视频可能耗时较久。一次可分析多个媒体。`;
+const TOOL_DESCRIPTION = `使用 Qwen3.8-Omni-Flash 理解音频、视频或图片。音视频理解策略为 omni-only：主模型只负责调度与整合，所有音频、视频内容（包括画面、人物动作、屏幕文字、公式、图表、曲线）都必须通过本工具分析，禁止用 ffmpeg 抽帧 + read_image/截图 OCR 替代。传入本地路径（绝对路径或当前工作目录相对路径）或 http(s) URL，以及你的问题；返回模型对该媒体的文字分析。单文件超过约 7MB 时会自动压缩/分段，长视频可能耗时较久。一次可分析多个媒体。`;
 
 const OUTPUT_SCHEMA = {
   type: 'object',
@@ -124,8 +126,20 @@ function validateToolArgs(args) {
 
 /** 注册工具 + 自动路由 + 系统提示。 */
 export function apply(ctx, rawConfig) {
+  const assertMediaPolicy = (cfg) => {
+    if (cfg.mediaPolicy !== 'omni-only') {
+      throw new Error(
+        'mediaPolicy 固定为 omni-only：音视频理解全部交给 qwen3.8-omni-flash，主模型只负责调度与整合。',
+      );
+    }
+  };
   const initial = normalizeConfig(rawConfig);
-  const currentConfig = () => normalizeConfig(rawConfig);
+  assertMediaPolicy(initial);
+  const currentConfig = () => {
+    const cfg = normalizeConfig(rawConfig);
+    assertMediaPolicy(cfg);
+    return cfg;
+  };
   const processed = new Set();
   const debug = (...args) => {
     if (currentConfig().debug) console.log('[qwen-omni-bridge]', ...args);
@@ -326,6 +340,7 @@ export function apply(ctx, rawConfig) {
   debug('插件已加载', {
     model: initial.model,
     baseURL: initial.baseURL,
+    mediaPolicy: initial.mediaPolicy,
     autoAnalyze: initial.autoAnalyzeAttachments,
     attachmentsRoot: initial.attachmentsRoot,
   });
