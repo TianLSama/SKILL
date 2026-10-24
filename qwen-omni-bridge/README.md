@@ -196,3 +196,5 @@ qwen-omni-bridge/
 ├─ scripts/sync-to-dsh.ps1  # 同步到 DSH 运行时副本
 └─ test/smoke.mjs           # 本地冒烟测试
 ```
+
+[![](https://img.shields.io/badge/powered_by-dsh-4D6BFE?style=flat-square&logo=deepseek&logoColor=white)](https://github.com/deepseek-ai/deepseek-harness)
