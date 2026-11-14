@@ -67,7 +67,9 @@
 
 ## 配置
 
-安装后在 DSH「插件」页找到 **听歌识曲**，在 Host `Config` schema 或 `cordis.patch.yml` 中调整：
+安装后打开 DSH 侧边栏的「插件」页，进入 **听歌识曲** 的包详情：组件行的标题会变成带 `›` 的按钮，点击即可打开配置页（由 Client 端注册 `plugins.row.config` 提供）。若刚安装完还看不到入口，刷新一次页面（建议 Ctrl+Shift+R）以加载 Client 模块。
+
+也可以直接写在 profile 的 `cordis.patch.yml` 或本包 `cordis.patch.yml` 中，字段如下：
 
 | 字段 | 默认值 | 说明 |
 | --- | --- | --- |
@@ -110,7 +112,8 @@ plugin_manager install_bundle target=%USERPROFILE%\.dsh\plugins\song-recognizer
 - 播放本地 FLAC 歌曲并内录 8.5 秒，`omni_media` 能正确判断语言（日语）、流派（高速电子/J-core 倾向）、情绪、BPM 区间、编曲与乐器、人声特征；8 秒片段不足以确认具体曲目，模型明确说明不确定而没有编造歌名。
 - `test/host-flow.mjs`：用真实内录 + 替身 `omni_media` 验证 `/song-id` 的 start/status/stop/cancel 编排、参数校验、`录制时长 · 文件大小 · 模型` 结果格式与临时目录清理。
 - `test/smoke.mjs`：配置归一化、参数解析、JSON/正文拆分、提示词维度、`client.js` 语法与命令名一致性、真实内录文件头解析全部通过。
-- 安装 `install_bundle` 返回 `application: applied`，`Config.listConfigs` 中 `include:song-recognizer` 状态为 `schema`；Client `Slots.listSubTree` 的 `shell.overlay` 中已出现 `song-id.panel` occupant，说明 Client 模块已加载并完成命令与浮层注册。
+- 安装 `install_bundle` 返回 `application: applied`，`Config.listConfigs` 中 `include:song-recognizer` 状态为 `schema`；Client `Slots.listSubTree` 的 `shell.overlay` 中已出现 `song-id.panel` occupant，`plugins.row.config` 中已出现 `@local/dsh-song-recognizer#song-recognizer` occupant，说明 Client 模块已加载并完成命令、浮层与配置页注册。
+- 配置页通过 `plugins.row.config` 的 `form.state` / `form.mutate` 直接读写 Host Config，不依赖 `ui-primitives`。
 
 未完成/受限验证：
 

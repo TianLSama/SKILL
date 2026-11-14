@@ -53,6 +53,28 @@ window.__ModuleLoader__.load({
       'field.lyrics': '歌词片段',
       'field.similar': '相似作品',
       'field.summary': '摘要',
+      'config.summary': '配置最长录音时长、思考强度、PowerShell 路径与调试选项。',
+      'config.maxSeconds': '最长录音秒数',
+      'config.maxSecondsHint': '到达该时长后自动停止录音，范围 5–600。',
+      'config.effort': '思考强度',
+      'config.effortHint': 'none 最快，xhigh 最细但更慢。',
+      'config.pwshPath': 'PowerShell 路径',
+      'config.pwshPathHint': '运行内录脚本的 pwsh；默认从 PATH 查找。',
+      'config.ffmpegPath': 'ffmpeg 路径',
+      'config.ffmpegPathHint': '保留字段；当前直接解析 WAV 头读取时长。',
+      'config.keepRecording': '保留录音文件',
+      'config.keepRecordingHint': '识别后保留临时 WAV，便于排查问题。',
+      'config.promptExtra': '附加要求',
+      'config.promptExtraHint': '追加到音乐特征分析提示词末尾，例如「重点说明编曲与音色」。',
+      'config.debug': '调试日志',
+      'config.debugHint': '输出调试日志（不含密钥）。',
+      'config.save': '保存',
+      'config.saving': '保存中…',
+      'config.saved': '已保存',
+      'config.saveFailed': '保存失败，请检查输入。',
+      'config.loading': '正在读取配置…',
+      'config.unavailable': '当前无法读取该插件配置。',
+      'config.readOnly': '当前部署的设置为只读。',
     };
 
     const en = {
@@ -92,6 +114,28 @@ window.__ModuleLoader__.load({
       'field.lyrics': 'Lyrics',
       'field.similar': 'Similar works',
       'field.summary': 'Summary',
+      'config.summary': 'Configure the maximum recording length, reasoning effort, PowerShell path and debug options.',
+      'config.maxSeconds': 'Maximum recording seconds',
+      'config.maxSecondsHint': 'Recording stops automatically at this length; range 5–600.',
+      'config.effort': 'Reasoning effort',
+      'config.effortHint': 'none is fastest; xhigh is the most thorough and slowest.',
+      'config.pwshPath': 'PowerShell path',
+      'config.pwshPathHint': 'The pwsh that runs the recorder script; defaults to PATH.',
+      'config.ffmpegPath': 'ffmpeg path',
+      'config.ffmpegPathHint': 'Reserved field; the duration is currently read from the WAV header.',
+      'config.keepRecording': 'Keep the recording',
+      'config.keepRecordingHint': 'Keep the temporary WAV after identification for troubleshooting.',
+      'config.promptExtra': 'Extra instruction',
+      'config.promptExtraHint': 'Appended to the music-analysis prompt, such as “focus on arrangement and timbre”.',
+      'config.debug': 'Debug logging',
+      'config.debugHint': 'Log debug details without API keys.',
+      'config.save': 'Save',
+      'config.saving': 'Saving…',
+      'config.saved': 'Saved',
+      'config.saveFailed': 'Save failed; check the values and try again.',
+      'config.loading': 'Reading the configuration…',
+      'config.unavailable': 'This plugin configuration is not readable right now.',
+      'config.readOnly': 'This deployment stores settings read-only.',
     };
 
     const COLORS = {
@@ -328,6 +372,17 @@ window.__ModuleLoader__.load({
         ),
       );
 
+      ctx.slots.inject('plugins.row.config', () =>
+        ctx.slots.register(
+          {
+            name: 'plugins.row.config',
+            key: '@local/dsh-song-recognizer#song-recognizer',
+            locale: NS,
+          },
+          RowConfigPage,
+        ),
+      );
+
       ctx.effect(() => () => {
         stopTicker();
         const session = store.get().session;
@@ -336,6 +391,227 @@ window.__ModuleLoader__.load({
           store.set({ open: false, phase: 'idle', session: null });
         }
       }, 'song-id: teardown');
+    }
+
+    const configFieldStyle = {
+      width: '100%',
+      height: 30,
+      borderRadius: 6,
+      border: `0.5px solid ${COLORS.border}`,
+      background: 'var(--dsw-alias-bg-layer-1, #ffffff)',
+      color: COLORS.label,
+      font: 'inherit',
+      fontSize: 13,
+      padding: '0 8px',
+      boxSizing: 'border-box',
+    };
+
+    const configLabelStyle = { fontSize: 12, fontWeight: 600, color: COLORS.label };
+
+    const configHintStyle = { margin: 0, fontSize: 11, lineHeight: 1.5, color: COLORS.secondary };
+
+    function ConfigField({ id, label, hint, children }) {
+      return h(
+        'div',
+        { style: { display: 'flex', flexDirection: 'column', gap: 4 } },
+        h('label', { htmlFor: id, style: configLabelStyle }, label),
+        children,
+        h('p', { style: configHintStyle }, hint),
+      );
+    }
+
+    function draftFromConfig(value) {
+      const v = value && typeof value === 'object' ? value : {};
+      return {
+        maxSeconds: typeof v.maxSeconds === 'number' ? v.maxSeconds : 90,
+        reasoningEffort: typeof v.reasoningEffort === 'string' ? v.reasoningEffort : 'xhigh',
+        pwshPath: typeof v.pwshPath === 'string' ? v.pwshPath : 'pwsh',
+        ffmpegPath: typeof v.ffmpegPath === 'string' ? v.ffmpegPath : 'ffmpeg',
+        keepRecording: v.keepRecording === true,
+        debug: v.debug === true,
+        promptExtra: typeof v.promptExtra === 'string' ? v.promptExtra : '',
+      };
+    }
+
+    /** 插件管理页的「听歌识曲」行配置表单（Host Config schema 的浏览器端编辑入口）。 */
+    function ConfigPanel({ t, form }) {
+      const snapshot = form.state || {};
+      const status = snapshot.status;
+      const writable = snapshot.writable === true;
+      const revision = snapshot.revision;
+      const [draft, setDraft] = React.useState(() => draftFromConfig(snapshot.value));
+      const [busy, setBusy] = React.useState(false);
+      const [message, setMessage] = React.useState('');
+
+      React.useEffect(() => {
+        setDraft(draftFromConfig(snapshot.value));
+      }, [revision]);
+
+      if (status === 'unavailable') {
+        return h('p', { style: { margin: 0, fontSize: 12, color: COLORS.error } }, t('config.unavailable'));
+      }
+      if (status === 'loading') {
+        return h('p', { style: { margin: 0, fontSize: 12, color: COLORS.secondary } }, t('config.loading'));
+      }
+
+      const edit = (field, value) => setDraft((current) => ({ ...current, [field]: value }));
+      const disabled = !writable || busy;
+
+      const save = async () => {
+        if (!writable || busy) return;
+        setBusy(true);
+        setMessage('');
+        const ops = [];
+        const setOp = (field, value) => ops.push({ op: 'set', path: [field], value });
+        const textOp = (field, text) => {
+          const trimmed = typeof text === 'string' ? text.trim() : '';
+          if (trimmed) setOp(field, trimmed);
+          else ops.push({ op: 'unset', path: [field] });
+        };
+        const seconds = Math.max(5, Math.min(600, Math.round(Number(draft.maxSeconds) || 90)));
+        setOp('maxSeconds', seconds);
+        setOp('reasoningEffort', draft.reasoningEffort);
+        setOp('keepRecording', draft.keepRecording === true);
+        setOp('debug', draft.debug === true);
+        textOp('pwshPath', draft.pwshPath);
+        textOp('ffmpegPath', draft.ffmpegPath);
+        textOp('promptExtra', draft.promptExtra);
+        try {
+          const ok = await form.mutate(ops, revision);
+          setMessage(ok ? t('config.saved') : t('config.saveFailed'));
+        } catch (error) {
+          setMessage(`${t('config.saveFailed')} ${error && error.message ? error.message : ''}`.trim());
+        } finally {
+          setBusy(false);
+        }
+      };
+
+      return h(
+        'div',
+        { style: { display: 'flex', flexDirection: 'column', gap: 14, paddingTop: 4 } },
+        h(
+          ConfigField,
+          { id: 'song-id-max-seconds', label: t('config.maxSeconds'), hint: t('config.maxSecondsHint') },
+          h('input', {
+            id: 'song-id-max-seconds',
+            type: 'number',
+            min: 5,
+            max: 600,
+            value: String(draft.maxSeconds),
+            disabled,
+            onChange: (event) => edit('maxSeconds', event.target.value === '' ? '' : Number(event.target.value)),
+            style: configFieldStyle,
+          }),
+        ),
+        h(
+          ConfigField,
+          { id: 'song-id-effort', label: t('config.effort'), hint: t('config.effortHint') },
+          h(
+            'select',
+            {
+              id: 'song-id-effort',
+              value: draft.reasoningEffort,
+              disabled,
+              onChange: (event) => edit('reasoningEffort', event.target.value),
+              style: configFieldStyle,
+            },
+            ['none', 'low', 'medium', 'xhigh'].map((option) => h('option', { key: option, value: option }, option)),
+          ),
+        ),
+        h(
+          ConfigField,
+          { id: 'song-id-pwsh', label: t('config.pwshPath'), hint: t('config.pwshPathHint') },
+          h('input', {
+            id: 'song-id-pwsh',
+            type: 'text',
+            value: draft.pwshPath,
+            disabled,
+            onChange: (event) => edit('pwshPath', event.target.value),
+            style: configFieldStyle,
+          }),
+        ),
+        h(
+          ConfigField,
+          { id: 'song-id-ffmpeg', label: t('config.ffmpegPath'), hint: t('config.ffmpegPathHint') },
+          h('input', {
+            id: 'song-id-ffmpeg',
+            type: 'text',
+            value: draft.ffmpegPath,
+            disabled,
+            onChange: (event) => edit('ffmpegPath', event.target.value),
+            style: configFieldStyle,
+          }),
+        ),
+        h(
+          ConfigField,
+          { id: 'song-id-extra', label: t('config.promptExtra'), hint: t('config.promptExtraHint') },
+          h('textarea', {
+            id: 'song-id-extra',
+            rows: 2,
+            value: draft.promptExtra,
+            disabled,
+            onChange: (event) => edit('promptExtra', event.target.value),
+            style: { ...configFieldStyle, height: 'auto', padding: '6px 8px', resize: 'vertical', lineHeight: 1.5 },
+          }),
+        ),
+        h(
+          'label',
+          { style: { display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: COLORS.label } },
+          h('input', {
+            type: 'checkbox',
+            checked: draft.keepRecording === true,
+            disabled,
+            onChange: (event) => edit('keepRecording', event.target.checked),
+          }),
+          h('span', null, t('config.keepRecording')),
+        ),
+        h('p', { style: configHintStyle }, t('config.keepRecordingHint')),
+        h(
+          'label',
+          { style: { display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: COLORS.label } },
+          h('input', {
+            type: 'checkbox',
+            checked: draft.debug === true,
+            disabled,
+            onChange: (event) => edit('debug', event.target.checked),
+          }),
+          h('span', null, t('config.debug')),
+        ),
+        h('p', { style: configHintStyle }, t('config.debugHint')),
+        h(
+          'div',
+          { style: { display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' } },
+          h(
+            'button',
+            {
+              type: 'button',
+              onClick: save,
+              disabled,
+              style: {
+                border: 'none',
+                background: disabled ? COLORS.idle : COLORS.brand,
+                color: 'var(--dsw-alias-bg-base, #ffffff)',
+                borderRadius: 8,
+                padding: '7px 16px',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: disabled ? 'not-allowed' : 'pointer',
+              },
+            },
+            busy ? t('config.saving') : t('config.save'),
+          ),
+          message ? h('span', { style: { fontSize: 12, color: COLORS.secondary } }, message) : null,
+          !writable ? h('span', { style: { fontSize: 12, color: COLORS.idle } }, t('config.readOnly')) : null,
+        ),
+      );
+    }
+
+    /** `plugins.row.config` 入口：`summary` 一行说明，`page` 渲染表单。 */
+    function RowConfigPage(props) {
+      const { t, view, form } = props;
+      if (view === 'summary') return t('config.summary');
+      if (!form) return null;
+      return h(ConfigPanel, { t, form });
     }
 
     function FieldGrid({ structured, t }) {
