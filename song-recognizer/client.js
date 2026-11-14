@@ -40,21 +40,19 @@ window.__ModuleLoader__.load({
       'analysisTitle': '音乐分析',
       'confidence': '置信度',
       'unknown': '不确定',
-      'fields': {
-        'version': '版本',
-        'language': '语言',
-        'genres': '流派',
-        'moods': '情绪',
-        'bpm': 'BPM',
-        'timeSignature': '拍号',
-        'key': '调性',
-        'instruments': '乐器/编曲',
-        'vocal': '人声',
-        'era': '年代/风格',
-        'lyrics': '歌词片段',
-        'similar': '相似作品',
-        'summary': '摘要',
-      },
+      'field.version': '版本',
+      'field.language': '语言',
+      'field.genres': '流派',
+      'field.moods': '情绪',
+      'field.bpm': 'BPM',
+      'field.timeSignature': '拍号',
+      'field.key': '调性',
+      'field.instruments': '乐器/编曲',
+      'field.vocal': '人声',
+      'field.era': '年代/风格',
+      'field.lyrics': '歌词片段',
+      'field.similar': '相似作品',
+      'field.summary': '摘要',
     };
 
     const en = {
@@ -81,21 +79,19 @@ window.__ModuleLoader__.load({
       'analysisTitle': 'Music analysis',
       'confidence': 'Confidence',
       'unknown': 'Uncertain',
-      'fields': {
-        'version': 'Version',
-        'language': 'Language',
-        'genres': 'Genres',
-        'moods': 'Mood',
-        'bpm': 'BPM',
-        'timeSignature': 'Time signature',
-        'key': 'Key',
-        'instruments': 'Instruments / arrangement',
-        'vocal': 'Vocals',
-        'era': 'Era / style',
-        'lyrics': 'Lyrics',
-        'similar': 'Similar works',
-        'summary': 'Summary',
-      },
+      'field.version': 'Version',
+      'field.language': 'Language',
+      'field.genres': 'Genres',
+      'field.moods': 'Mood',
+      'field.bpm': 'BPM',
+      'field.timeSignature': 'Time signature',
+      'field.key': 'Key',
+      'field.instruments': 'Instruments / arrangement',
+      'field.vocal': 'Vocals',
+      'field.era': 'Era / style',
+      'field.lyrics': 'Lyrics',
+      'field.similar': 'Similar works',
+      'field.summary': 'Summary',
     };
 
     const COLORS = {
@@ -343,7 +339,6 @@ window.__ModuleLoader__.load({
     }
 
     function FieldGrid({ structured, t }) {
-      const fields = t('fields') || {};
       const order = [
         'version',
         'language',
@@ -376,7 +371,7 @@ window.__ModuleLoader__.load({
                   paddingTop: 1,
                 },
               },
-              fields[key] || key,
+              t(`field.${key}`),
             ),
             h(
               'span',
@@ -415,7 +410,6 @@ window.__ModuleLoader__.load({
 
       if (!state.open) return null;
 
-      const fields = t('fields') || {};
       const recording = state.phase === 'recording';
       const analyzing = state.phase === 'analyzing';
       const starting = state.phase === 'starting';
