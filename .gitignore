@@ -65,4 +65,5 @@ exports/
 output/
 .dsh-acl-recovery/
 .tmp-*/
+.dsh-song-id/
 *.tgz

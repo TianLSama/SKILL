@@ -1,0 +1,13 @@
+# 听歌识曲：WASAPI 内录电脑声音，交给 qwen3.8-omni-flash 做多维度音乐特征分析。
+# 安装为 profile bundle 后，这一行会插入 Host 插件树。
+# 这些字段都可以在 DSH 的插件管理页面直接修改。
+# 识别所需的接入点、API Key 与模型复用 @local/qwen-omni-bridge 的配置，本插件不重复保存密钥。
+- insert:
+    - id: song-recognizer
+      name: '@local/dsh-song-recognizer'
+      config:
+        maxSeconds: 90
+        reasoningEffort: xhigh
+        pwshPath: pwsh
+        ffmpegPath: ffmpeg
+        keepRecording: false

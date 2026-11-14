@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "听歌识曲",
+    "description": "用 WASAPI 内录（loopback）录制电脑正在播放的声音，不使用麦克风；录音片段经 qwen-omni-bridge 交给 qwen3.8-omni-flash，识别曲目并分析流派、BPM、调性、编曲、人声、情绪等多维度音乐特征。在输入框发送 /听歌识曲 会弹出录音小窗，点击「结束录音并识别」即可得到结果；也可直接使用 /song-id start、/song-id stop。识别需要先安装并启用 Qwen 全模态桥接（@local/qwen-omni-bridge）并配置好接入点与 API Key。"
+  }
+}

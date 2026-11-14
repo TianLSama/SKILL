@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Song recognizer",
+    "description": "Records the computer's system audio with WASAPI loopback (no microphone), then sends the clip through qwen-omni-bridge to qwen3.8-omni-flash to identify the track and analyze genres, BPM, key, arrangement, vocals and mood. Send /听歌识曲 in the composer to open the recorder panel, then press “Stop and identify”; the underlying commands are /song-id start and /song-id stop. Identification requires the Qwen Omni Bridge plugin (@local/qwen-omni-bridge) installed and enabled with a configured endpoint and API key."
+  }
+}

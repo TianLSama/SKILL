@@ -1,0 +1,42 @@
+{
+  "name": "@local/dsh-song-recognizer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "听歌识曲：WASAPI 内录电脑声音，经 qwen-omni-bridge 交给 qwen3.8-omni-flash 做多维度音乐特征分析",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "lib/*.js",
+    "scripts/*.ps1",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "docs",
+    "README.md",
+    "MEMORY.md"
+  ],
+  "dependencies": {
+    "@deepseek-ai/schemastery": "~3.18.5"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-commands",
+        "@deepseek-ai/dsh-client-ui-conversation"
+      ]
+    }
+  }
+}
