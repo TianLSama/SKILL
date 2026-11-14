@@ -9,7 +9,7 @@ import { accessSync, promises as fsp, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { normalizeConfig } from '../lib/config.js';
-import { buildAnalysisText, buildMusicPrompt, MUSIC_PROMPT, splitAnalysis } from '../lib/identify.js';
+import { buildAnalysisText, buildLyricsFollowup, buildMusicPrompt, DEFAULT_SEARCH_SITES, MUSIC_PROMPT, splitAnalysis } from '../lib/identify.js';
 import { __test as pluginTest } from '../lib/plugin.js';
 import { readWavInfo } from '../lib/recorder.js';
 
@@ -76,6 +76,31 @@ check('buildAnalysisText 包含 JSON 块与元信息', () => {
   assert.match(text, /录制时长 12\.3 秒/);
   assert.match(text, /```json/);
   assert.match(text, /"title": "t"/);
+});
+
+check('buildLyricsFollowup 有歌词时生成核对请求', () => {
+  const text = buildLyricsFollowup(
+    { title: 't', artist: 'a', language: '日语', lyrics: '君の名前を呼ぶ' },
+    { durationSeconds: 12.34 },
+  );
+  assert.ok(text.includes('<听歌识曲-歌词核对>'));
+  assert.match(text, /君の名前を呼ぶ/);
+  assert.match(text, /约 12\.3 秒/);
+  assert.match(text, /网易云音乐/);
+  assert.match(text, /萌娘百科/);
+  assert.match(text, /不要编造/);
+});
+
+check('buildLyricsFollowup 支持自定义站点', () => {
+  const text = buildLyricsFollowup({ lyrics: 'abc' }, { searchSites: '某音乐站' });
+  assert.match(text, /某音乐站/);
+});
+
+check('buildLyricsFollowup 没有歌词时返回 null', () => {
+  assert.equal(buildLyricsFollowup({ lyrics: '' }), null);
+  assert.equal(buildLyricsFollowup({ lyrics: '   ' }), null);
+  assert.equal(buildLyricsFollowup(null), null);
+  assert.ok(DEFAULT_SEARCH_SITES.includes('酷狗音乐'));
 });
 
 check('提示词覆盖多维度分析', () => {

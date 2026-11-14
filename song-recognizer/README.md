@@ -7,6 +7,7 @@
 - **内录，不用麦克风**：通过 Windows WASAPI 的 loopback 模式录制系统默认播放设备正在输出的声音，耳机/音箱里放什么就录什么。
 - **复用已有桥接插件**：音频片段经 `qwen-omni-bridge` 注册的 `omni_media` 工具交给 `qwen3.8-omni-flash`，接入点、API Key、模型与推理强度都沿用桥接插件的配置，本插件不保存任何密钥。
 - **多维度分析**：曲目、演唱者、版本、语言、流派、情绪、BPM、拍号、调性、编曲与乐器、人声特征、年代/制作风格、歌词片段、相似作品、置信度，另附分小节的中文分析。
+- **歌词回传主模型核对**：识别出歌词片段后，自动把它作为一条 `<听歌识曲-歌词核对>` 消息发回主模型；主模型用网络搜索按歌词匹配，重点参考网易云音乐、酷狗音乐、QQ 音乐、汽水音乐、萌娘百科以及其他音乐/歌词站点，给出歌名、演唱者、版本与判定依据。
 - **命令 + 小窗**：输入 `/听歌识曲` 发送后弹出录音小窗，点「结束录音并识别」即可。
 
 ## 使用
@@ -16,6 +17,7 @@
 1. 在输入框输入 `/听歌识曲` 并回车。
 2. 小窗自动开始内录，同时开始计时；让音乐继续播放，建议录 10–20 秒。
 3. 点「结束录音并识别」，等待 10–40 秒，结果卡片会列出多维度音乐特征；「复制结果」把文字复制到剪贴板。
+4. 如果识别出歌词片段，插件会把它发回主模型，主模型再联网到各音乐站点按歌词匹配，给出歌名、演唱者、版本与判定依据（可在配置里用 `autoLyricsFollowup` 关闭）。
 
 小窗里的按钮：
 
@@ -59,6 +61,12 @@
                 │  qwen3.8-omni-flash（多维度音乐特征提示词）
                 ▼
         结果文本（JSON 块 + 分小节分析）──▶ 小窗卡片 / 命令结果
+                │  识别到 lyrics 时
+                ▼
+        agent.followup(<听歌识曲-歌词核对>) ──▶ 主模型
+                │  web_search / web_fetch
+                ▼
+        网易云音乐、酷狗音乐、QQ 音乐、汽水音乐、萌娘百科等站点的歌词匹配
 ```
 
 - 录音在 Host 进程外的一个 PowerShell 子进程中进行，插件只负责启动、等待就绪、写停止标志、收集结果。
@@ -79,6 +87,8 @@
 | `ffmpegPath` | `ffmpeg` | 读取录音信息用的 ffmpeg 路径（当前实现直接解析 WAV 头，保留该字段供后续使用） |
 | `keepRecording` | `false` | 识别后是否保留临时 WAV |
 | `promptExtra` | 空 | 追加到识别提示词末尾的额外要求 |
+| `autoLyricsFollowup` | `true` | 识别出歌词后自动把歌词片段发回主模型联网核对 |
+| `searchSites` | 网易云音乐、酷狗音乐、QQ 音乐、汽水音乐、萌娘百科 | 主模型核对歌词时优先参考的站点清单 |
 | `debug` | `false` | 输出调试日志（不含密钥） |
 
 ## 安装
@@ -110,8 +120,8 @@ plugin_manager install_bundle target=%USERPROFILE%\.dsh\plugins\song-recognizer
 
 - `scripts/loopback-record.ps1` 单独运行可录到系统回放（`pcm_f32le`、48kHz、双声道），音量正常（`mean_volume` 约 -14 dB）。
 - 播放本地 FLAC 歌曲并内录 8.5 秒，`omni_media` 能正确判断语言（日语）、流派（高速电子/J-core 倾向）、情绪、BPM 区间、编曲与乐器、人声特征；8 秒片段不足以确认具体曲目，模型明确说明不确定而没有编造歌名。
-- `test/host-flow.mjs`：用真实内录 + 替身 `omni_media` 验证 `/song-id` 的 start/status/stop/cancel 编排、参数校验、`录制时长 · 文件大小 · 模型` 结果格式与临时目录清理。
-- `test/smoke.mjs`：配置归一化、参数解析、JSON/正文拆分、提示词维度、`client.js` 语法与命令名一致性、真实内录文件头解析全部通过。
+- `test/host-flow.mjs`：用真实内录 + 替身 `omni_media` 验证 `/song-id` 的 start/status/stop/cancel 编排、参数校验、`录制时长 · 文件大小 · 模型` 结果格式与临时目录清理；并验证识别到歌词后会给主模型发一条 `<听歌识曲-歌词核对>` followup 消息（含歌词片段与站点清单）。
+- `test/smoke.mjs`：配置归一化、参数解析、JSON/正文拆分、歌词核对消息构造（含无歌词返回 null）、提示词维度、`client.js` 语法与命令名一致性、真实内录文件头解析全部通过。
 - 安装 `install_bundle` 返回 `application: applied`，`Config.listConfigs` 中 `include:song-recognizer` 状态为 `schema`；Client `Slots.listSubTree` 的 `shell.overlay` 中已出现 `song-id.panel` occupant，`plugins.row.config` 中已出现 `@local/dsh-song-recognizer#song-recognizer` occupant，说明 Client 模块已加载并完成命令、浮层与配置页注册。
 - 配置页通过 `plugins.row.config` 的 `form.state` / `form.mutate` 直接读写 Host Config，不依赖 `ui-primitives`。
 
@@ -132,7 +142,7 @@ song-recognizer/
 │  ├─ plugin.js              # 命令注册、start/stop/cancel/status 编排、系统提示
 │  ├─ config.js              # Config schema 与配置归一化
 │  ├─ recorder.js            # 录音子进程管理、WAV 头解析、临时目录清理
-│  └─ identify.js            # 多维度音乐特征提示词、调用 omni_media、结果整理
+│  └─ identify.js            # 多维度音乐特征提示词、调用 omni_media、歌词核对消息、结果整理
 ├─ scripts/
 │  ├─ loopback-record.ps1    # WASAPI loopback 录音脚本（内联 C# COM interop）
 │  └─ sync-to-dsh.ps1        # 同步到 DSH 运行时副本并安装依赖
@@ -140,4 +150,10 @@ song-recognizer/
 ├─ locale/{zh,en}.json       # 插件管理器显示元数据
 ├─ icon.svg
 └─ test/smoke.mjs            # 本地冒烟测试
+```
+
+`test/host-flow.mjs` 不在上面的清单里是因为它需要真实播放音频；单独运行：
+
+```powershell
+$env:SONG_FILE = '<本地音频文件>'; node test/host-flow.mjs
 ```

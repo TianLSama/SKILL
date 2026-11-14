@@ -7,10 +7,11 @@
  *
  * 客户端入口（/听歌识曲 命令与小窗）由 client.js 提供，它只是这里的调用方。
  */
+import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { Config, normalizeConfig } from './config.js';
-import { buildAnalysisText, identifyWithBridge } from './identify.js';
+import { buildAnalysisText, buildLyricsFollowup, identifyWithBridge, splitAnalysis } from './identify.js';
 import {
   cancelRecording,
   cleanupSession,
@@ -33,6 +34,7 @@ const SECTION_TEXT = `## 听歌识曲
 用户可以在输入框发送 \`/${COMMAND_NAME}\` 命令（中文入口 \`/听歌识曲\` 会弹出录音小窗）来识别电脑正在播放的歌曲。
 - 录音走 WASAPI loopback 内录系统回放，不使用麦克风。
 - 结束录音后由 qwen3.8-omni-flash 做多维度音乐特征分析（曲目、流派、BPM、调性、编曲、情绪等）。
+- 识别出歌词后，插件会把歌词片段作为一条 \`<听歌识曲-歌词核对>\` 消息发给你：请用网络搜索按歌词匹配歌曲，重点参考网易云音乐、酷狗音乐、QQ 音乐、汽水音乐、萌娘百科以及其他音乐/歌词站点的歌词信息，给出歌名、演唱者、版本与判定依据；检索不到就给出最接近的候选与置信度，不要编造。
 - 如果用户问"现在放的是什么歌"，提示他发送 \`/听歌识曲\` 或 \`/${COMMAND_NAME}\`，不要凭对话内容猜测歌曲。`;
 
 function parseAction(rawInput) {
@@ -60,6 +62,47 @@ async function describeStatus() {
   if (!session || session.exited) return '当前没有正在进行的录音。';
   const elapsed = ((Date.now() - session.startedAt) / 1000).toFixed(1);
   return `正在录制电脑声音：已录 ${elapsed} 秒。发送 \`/${COMMAND_NAME} stop\` 结束录音并识别。`;
+}
+
+/** 构造发给主模型的核对消息（作为一条独立的 user 回合）。 */
+function createFollowupMessage(text) {
+  return {
+    id: randomUUID(),
+    role: 'user',
+    content: [{ type: 'text', text }],
+    source: {
+      kind: 'song-recognizer',
+      form: 'notice',
+      summary: '听歌识曲：把歌词片段交给主模型联网核对',
+    },
+  };
+}
+
+/**
+ * 把识别到的歌词片段交回主模型，让它用网络搜索到音乐站点按歌词匹配。
+ * @returns {{ sent: boolean, note: string }|null}
+ */
+function sendLyricsFollowup({ agent, structured, cfg, durationSeconds }) {
+  if (!cfg.autoLyricsFollowup) return null;
+  const text = buildLyricsFollowup(structured, {
+    durationSeconds,
+    searchSites: cfg.searchSites,
+  });
+  if (!text) {
+    return { sent: false, note: '本次没有辨认出可用的歌词片段，未触发主模型联网核对。' };
+  }
+  if (!agent || typeof agent.followup !== 'function') {
+    return { sent: false, note: '已识别歌词片段，但当前会话无法唤醒主模型（缺少 followup 能力）。' };
+  }
+  try {
+    agent.followup(createFollowupMessage(text));
+    return {
+      sent: true,
+      note: '已把歌词片段发送给主模型，让它用网络搜索到网易云音乐、酷狗音乐、QQ 音乐、汽水音乐、萌娘百科等站点核对歌名与版本。',
+    };
+  } catch (error) {
+    return { sent: false, note: `歌词已识别，但发送给主模型失败：${error?.message ?? String(error)}` };
+  }
 }
 
 /** 注册命令与系统提示。 */
@@ -105,13 +148,21 @@ export function apply(ctx, rawConfig) {
         promptExtra: cfg.promptExtra,
         debug: cfg.debug,
       });
+      const { structured } = splitAnalysis(result.answer);
       const text = buildAnalysisText({
         answer: result.answer,
         model: result.model,
         durationSeconds: info.durationSeconds,
         wavBytes: info.bytes,
       });
-      return { kind: 'success', text };
+      const followup = sendLyricsFollowup({
+        agent,
+        structured,
+        cfg,
+        durationSeconds: info.durationSeconds,
+      });
+      debug('歌词回传主模型：', followup?.sent ?? false);
+      return { kind: 'success', text: followup ? `${text}\n\n${followup.note}` : text };
     } finally {
       if (!cfg.keepRecording) await cleanupSession(info);
     }

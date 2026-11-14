@@ -1,5 +1,6 @@
 /** 插件配置：插件管理页面可编辑，全部 `.volatile()`，运行时用 `.get()` 读取。 */
 import z from '@deepseek-ai/schemastery';
+import { DEFAULT_SEARCH_SITES } from './identify.js';
 
 export const DEFAULT_COMMAND = 'song-id';
 
@@ -37,6 +38,16 @@ export const Config = z
       .string()
       .default('')
       .description('追加到识别提示词末尾的额外要求（例如只关注曲风）。')
+      .volatile(),
+    autoLyricsFollowup: z
+      .boolean()
+      .default(true)
+      .description('识别出歌词后，自动把歌词片段发给主模型，让它用网络搜索到网易云、酷狗、QQ 音乐、汽水音乐、萌娘百科等站点核对歌曲。')
+      .volatile(),
+    searchSites: z
+      .string()
+      .default(DEFAULT_SEARCH_SITES)
+      .description('主模型核对歌词时优先参考的音乐站点清单。')
       .volatile(),
     debug: z
       .boolean()
@@ -79,6 +90,8 @@ export function normalizeConfig(raw) {
     pwshPath: textOr(field(cfg, 'pwshPath'), 'pwsh'),
     keepRecording: field(cfg, 'keepRecording') === true,
     promptExtra: typeof field(cfg, 'promptExtra') === 'string' ? field(cfg, 'promptExtra').trim() : '',
+    autoLyricsFollowup: field(cfg, 'autoLyricsFollowup') !== false,
+    searchSites: textOr(field(cfg, 'searchSites'), DEFAULT_SEARCH_SITES),
     debug: field(cfg, 'debug') === true,
   };
 }

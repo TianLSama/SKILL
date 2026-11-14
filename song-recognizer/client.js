@@ -66,6 +66,10 @@ window.__ModuleLoader__.load({
       'config.keepRecordingHint': '识别后保留临时 WAV，便于排查问题。',
       'config.promptExtra': '附加要求',
       'config.promptExtraHint': '追加到音乐特征分析提示词末尾，例如「重点说明编曲与音色」。',
+      'config.autoFollowup': '歌词联网核对',
+      'config.autoFollowupHint': '识别出歌词后，自动把歌词片段发给主模型，用网络搜索到音乐站点按歌词匹配歌曲。',
+      'config.searchSites': '歌词检索站点',
+      'config.searchSitesHint': '主模型核对歌词时优先参考的站点，可用顿号或逗号分隔。',
       'config.debug': '调试日志',
       'config.debugHint': '输出调试日志（不含密钥）。',
       'config.save': '保存',
@@ -127,6 +131,10 @@ window.__ModuleLoader__.load({
       'config.keepRecordingHint': 'Keep the temporary WAV after identification for troubleshooting.',
       'config.promptExtra': 'Extra instruction',
       'config.promptExtraHint': 'Appended to the music-analysis prompt, such as “focus on arrangement and timbre”.',
+      'config.autoFollowup': 'Verify lyrics online',
+      'config.autoFollowupHint': 'After identifying lyrics, send the snippet back to the main model so it can search music sites for a lyric match.',
+      'config.searchSites': 'Lyric search sites',
+      'config.searchSitesHint': 'Sites the main model should check first when matching lyrics; separate them with commas.',
       'config.debug': 'Debug logging',
       'config.debugHint': 'Log debug details without API keys.',
       'config.save': 'Save',
@@ -430,6 +438,8 @@ window.__ModuleLoader__.load({
         keepRecording: v.keepRecording === true,
         debug: v.debug === true,
         promptExtra: typeof v.promptExtra === 'string' ? v.promptExtra : '',
+        autoLyricsFollowup: v.autoLyricsFollowup !== false,
+        searchSites: typeof v.searchSites === 'string' ? v.searchSites : '',
       };
     }
 
@@ -476,6 +486,8 @@ window.__ModuleLoader__.load({
         textOp('pwshPath', draft.pwshPath);
         textOp('ffmpegPath', draft.ffmpegPath);
         textOp('promptExtra', draft.promptExtra);
+        setOp('autoLyricsFollowup', draft.autoLyricsFollowup === true);
+        textOp('searchSites', draft.searchSites);
         try {
           const ok = await form.mutate(ops, revision);
           setMessage(ok ? t('config.saved') : t('config.saveFailed'));
@@ -551,6 +563,30 @@ window.__ModuleLoader__.load({
             value: draft.promptExtra,
             disabled,
             onChange: (event) => edit('promptExtra', event.target.value),
+            style: { ...configFieldStyle, height: 'auto', padding: '6px 8px', resize: 'vertical', lineHeight: 1.5 },
+          }),
+        ),
+        h(
+          'label',
+          { style: { display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: COLORS.label } },
+          h('input', {
+            type: 'checkbox',
+            checked: draft.autoLyricsFollowup === true,
+            disabled,
+            onChange: (event) => edit('autoLyricsFollowup', event.target.checked),
+          }),
+          h('span', null, t('config.autoFollowup')),
+        ),
+        h('p', { style: configHintStyle }, t('config.autoFollowupHint')),
+        h(
+          ConfigField,
+          { id: 'song-id-sites', label: t('config.searchSites'), hint: t('config.searchSitesHint') },
+          h('textarea', {
+            id: 'song-id-sites',
+            rows: 2,
+            value: draft.searchSites,
+            disabled,
+            onChange: (event) => edit('searchSites', event.target.value),
             style: { ...configFieldStyle, height: 'auto', padding: '6px 8px', resize: 'vertical', lineHeight: 1.5 },
           }),
         ),

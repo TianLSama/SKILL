@@ -33,7 +33,8 @@ async function main() {
             assert.ok(Array.isArray(args.paths) && args.paths.length === 1, 'omni_media 应收到一个路径');
             assert.match(args.prompt, /多维度|BPM|调性/);
             return {
-              answer: '```json\n{"title":"测试曲","artist":"测试歌手","bpm":"120"}\n```\n\n这是一段测试分析。',
+              answer:
+                '```json\n{"title":"测试曲","artist":"测试歌手","bpm":"120","language":"日语","lyrics":"君の名前を呼ぶ"}\n```\n\n这是一段测试分析。',
               model: 'stub-omni',
               media: [{ path: args.paths[0], kind: 'audio', bytes: 1, segments: 1 }],
             };
@@ -68,7 +69,14 @@ async function main() {
   assert.match(command.description, /内录/);
 
   const signal = new AbortController().signal;
-  const invoke = (rawInput) => command.handler({ agent: { id: 'test-agent' }, rawInput, signal });
+  const followed = [];
+  const agent = {
+    id: 'test-agent',
+    followup(message) {
+      followed.push(message);
+    },
+  };
+  const invoke = (rawInput) => command.handler({ agent, rawInput, signal });
 
   const statusBefore = await invoke('status');
   assert.equal(statusBefore.kind, 'success');
@@ -102,7 +110,19 @@ async function main() {
     assert.match(stopped.text, /录制时长/);
     assert.match(stopped.text, /"title": "测试曲"/);
     assert.match(stopped.text, /这是一段测试分析/);
+    assert.match(stopped.text, /已把歌词片段发送给主模型/);
     log('stop 返回前 120 字：', stopped.text.slice(0, 120).replace(/\n/g, ' '));
+
+    assert.equal(followed.length, 1, '识别出歌词后应给主模型发一条核对消息');
+    const followup = followed[0];
+    assert.equal(followup.role, 'user');
+    assert.equal(followup.source.kind, 'song-recognizer');
+    const followupText = followup.content.map((block) => block.text || '').join('');
+    assert.ok(followupText.includes('<听歌识曲-歌词核对>'), '核对消息应带标记');
+    assert.match(followupText, /君の名前を呼ぶ/);
+    assert.match(followupText, /网易云音乐/);
+    assert.match(followupText, /萌娘百科/);
+    log('已构造歌词核对消息：', followupText.split('\n')[1]);
 
     const dirs2 = await fsp.readdir(path.join(work, '.dsh-song-id'));
     assert.equal(dirs2.length, 0, '默认应清理临时录音目录');
