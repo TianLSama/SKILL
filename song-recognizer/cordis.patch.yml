@@ -11,5 +11,5 @@
         pwshPath: pwsh
         ffmpegPath: ffmpeg
         keepRecording: false
-        autoLyricsFollowup: true
+        autoModelFollowup: true
         searchSites: '网易云音乐（music.163.com）、酷狗音乐（kugou.com）、QQ 音乐（y.qq.com）、汽水音乐、萌娘百科（zh.moegirl.org.cn）'

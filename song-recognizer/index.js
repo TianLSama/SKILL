@@ -6,6 +6,8 @@ export { apply, inject, name, Config, __test } from './lib/plugin.js';
 export { normalizeConfig, DEFAULT_COMMAND } from './lib/config.js';
 export {
   MUSIC_PROMPT,
+  DEFAULT_SEARCH_SITES,
+  buildModelFollowup,
   buildMusicPrompt,
   identifyWithBridge,
   splitAnalysis,

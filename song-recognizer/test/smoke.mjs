@@ -9,7 +9,7 @@ import { accessSync, promises as fsp, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { normalizeConfig } from '../lib/config.js';
-import { buildAnalysisText, buildLyricsFollowup, buildMusicPrompt, DEFAULT_SEARCH_SITES, MUSIC_PROMPT, splitAnalysis } from '../lib/identify.js';
+import { buildAnalysisText, buildModelFollowup, buildMusicPrompt, DEFAULT_SEARCH_SITES, MUSIC_PROMPT, splitAnalysis } from '../lib/identify.js';
 import { __test as pluginTest } from '../lib/plugin.js';
 import { readWavInfo } from '../lib/recorder.js';
 
@@ -78,28 +78,44 @@ check('buildAnalysisText 包含 JSON 块与元信息', () => {
   assert.match(text, /"title": "t"/);
 });
 
-check('buildLyricsFollowup 有歌词时生成核对请求', () => {
-  const text = buildLyricsFollowup(
-    { title: 't', artist: 'a', language: '日语', lyrics: '君の名前を呼ぶ' },
-    { durationSeconds: 12.34 },
-  );
-  assert.ok(text.includes('<听歌识曲-歌词核对>'));
+check('buildModelFollowup 有歌词时生成核对请求', () => {
+  const text = buildModelFollowup({
+    structured: { title: 't', artist: 'a', language: '日语', lyrics: '君の名前を呼ぶ' },
+    durationSeconds: 12.34,
+  });
+  assert.ok(text.includes('<听歌识曲-识别结果>'));
   assert.match(text, /君の名前を呼ぶ/);
   assert.match(text, /约 12\.3 秒/);
   assert.match(text, /网易云音乐/);
   assert.match(text, /萌娘百科/);
   assert.match(text, /不要编造/);
+  assert.match(text, /## 识别摘要/);
 });
 
-check('buildLyricsFollowup 支持自定义站点', () => {
-  const text = buildLyricsFollowup({ lyrics: 'abc' }, { searchSites: '某音乐站' });
+check('buildModelFollowup 无歌词时只整理音乐特征', () => {
+  const text = buildModelFollowup({
+    structured: { title: '未能确定', artist: '未能确定', bpm: '120', key: 'C 大调', lyrics: '' },
+    durationSeconds: 9,
+  });
+  assert.ok(text.includes('（本次没有听清可用的歌词）'));
+  assert.match(text, /曲目无法确定/);
+  assert.match(text, /BPM：120/);
+  assert.doesNotMatch(text, /按歌词联网匹配这首歌/);
+});
+
+check('buildModelFollowup 支持自定义站点与正文', () => {
+  const text = buildModelFollowup({
+    structured: { lyrics: 'abc' },
+    analysisBody: '一段分析正文。',
+    searchSites: '某音乐站',
+  });
   assert.match(text, /某音乐站/);
+  assert.match(text, /一段分析正文/);
 });
 
-check('buildLyricsFollowup 没有歌词时返回 null', () => {
-  assert.equal(buildLyricsFollowup({ lyrics: '' }), null);
-  assert.equal(buildLyricsFollowup({ lyrics: '   ' }), null);
-  assert.equal(buildLyricsFollowup(null), null);
+check('buildModelFollowup 没有内容时返回 null', () => {
+  assert.equal(buildModelFollowup({ structured: { lyrics: '' } }), null);
+  assert.equal(buildModelFollowup({ structured: null }), null);
   assert.ok(DEFAULT_SEARCH_SITES.includes('酷狗音乐'));
 });
 

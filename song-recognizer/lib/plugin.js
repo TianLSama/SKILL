@@ -11,7 +11,7 @@ import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { Config, normalizeConfig } from './config.js';
-import { buildAnalysisText, buildLyricsFollowup, identifyWithBridge, splitAnalysis } from './identify.js';
+import { buildAnalysisText, buildModelFollowup, identifyWithBridge, splitAnalysis } from './identify.js';
 import {
   cancelRecording,
   cleanupSession,
@@ -32,9 +32,12 @@ const RECORD_SCRIPT = path.join(PACKAGE_ROOT, 'scripts', 'loopback-record.ps1');
 const SECTION_TEXT = `## 听歌识曲
 
 用户可以在输入框发送 \`/${COMMAND_NAME}\` 命令（中文入口 \`/听歌识曲\` 会弹出录音小窗）来识别电脑正在播放的歌曲。
-- 录音走 WASAPI loopback 内录系统回放，不使用麦克风。
+- 录音走 WASAPI loopback 内录系统默认播放设备的声音，不使用麦克风。
 - 结束录音后由 qwen3.8-omni-flash 做多维度音乐特征分析（曲目、流派、BPM、调性、编曲、情绪等）。
-- 识别出歌词后，插件会把歌词片段作为一条 \`<听歌识曲-歌词核对>\` 消息发给你：请用网络搜索按歌词匹配歌曲，重点参考网易云音乐、酷狗音乐、QQ 音乐、汽水音乐、萌娘百科以及其他音乐/歌词站点的歌词信息，给出歌名、演唱者、版本与判定依据；检索不到就给出最接近的候选与置信度，不要编造。
+- 识别完成后，插件会把整份结果作为一条 \`<听歌识曲-识别结果>\` 消息发给你，其中包含识别摘要、可辨认的歌词片段与分析正文：
+  - 有歌词时，请用网络搜索按歌词匹配歌曲，重点参考网易云音乐、酷狗音乐、QQ 音乐、汽水音乐、萌娘百科以及其他音乐/歌词站点，核对歌名、演唱者、版本（原唱/翻唱/现场/Remix）、专辑与发行时间，并说明判定依据；检索不到就给出最接近的候选与置信度，不要编造；
+  - 没有歌词时，不要猜测具体歌名，只说明曲目无法确定并整理音乐特征。
+- 小窗只负责开始/结束录音，不在小窗展示分析结果；最终结论由你在会话里给出。
 - 如果用户问"现在放的是什么歌"，提示他发送 \`/听歌识曲\` 或 \`/${COMMAND_NAME}\`，不要凭对话内容猜测歌曲。`;
 
 function parseAction(rawInput) {
@@ -64,7 +67,7 @@ async function describeStatus() {
   return `正在录制电脑声音：已录 ${elapsed} 秒。发送 \`/${COMMAND_NAME} stop\` 结束录音并识别。`;
 }
 
-/** 构造发给主模型的核对消息（作为一条独立的 user 回合）。 */
+/** 构造发给主模型的识别结果消息（作为一条独立的 user 回合）。 */
 function createFollowupMessage(text) {
   return {
     id: randomUUID(),
@@ -73,35 +76,36 @@ function createFollowupMessage(text) {
     source: {
       kind: 'song-recognizer',
       form: 'notice',
-      summary: '听歌识曲：把歌词片段交给主模型联网核对',
+      summary: '听歌识曲：把识别结果交给主模型核对',
     },
   };
 }
 
 /**
- * 把识别到的歌词片段交回主模型，让它用网络搜索到音乐站点按歌词匹配。
- * @returns {{ sent: boolean, note: string }|null}
+ * 把整份识别结果交给主模型：有歌词就联网核对，没有歌词就整理音乐特征。
+ * @returns {{ sent: boolean, note: string }}
  */
-function sendLyricsFollowup({ agent, structured, cfg, durationSeconds }) {
-  if (!cfg.autoLyricsFollowup) return null;
-  const text = buildLyricsFollowup(structured, {
+function sendModelFollowup({ agent, structured, analysisBody, cfg, durationSeconds }) {
+  if (!cfg.autoModelFollowup) {
+    return { sent: false, note: '已关闭「结果交给主模型」开关。' };
+  }
+  const text = buildModelFollowup({
+    structured,
+    analysisBody,
     durationSeconds,
     searchSites: cfg.searchSites,
   });
   if (!text) {
-    return { sent: false, note: '本次没有辨认出可用的歌词片段，未触发主模型联网核对。' };
+    return { sent: false, note: '本次没有识别出可传达的内容。' };
   }
   if (!agent || typeof agent.followup !== 'function') {
-    return { sent: false, note: '已识别歌词片段，但当前会话无法唤醒主模型（缺少 followup 能力）。' };
+    return { sent: false, note: '当前会话无法唤醒主模型。' };
   }
   try {
     agent.followup(createFollowupMessage(text));
-    return {
-      sent: true,
-      note: '已把歌词片段发送给主模型，让它用网络搜索到网易云音乐、酷狗音乐、QQ 音乐、汽水音乐、萌娘百科等站点核对歌名与版本。',
-    };
+    return { sent: true, note: '' };
   } catch (error) {
-    return { sent: false, note: `歌词已识别，但发送给主模型失败：${error?.message ?? String(error)}` };
+    return { sent: false, note: `发送给主模型失败：${error?.message ?? String(error)}` };
   }
 }
 
@@ -148,21 +152,30 @@ export function apply(ctx, rawConfig) {
         promptExtra: cfg.promptExtra,
         debug: cfg.debug,
       });
-      const { structured } = splitAnalysis(result.answer);
+      const { structured, body } = splitAnalysis(result.answer);
+      const followup = sendModelFollowup({
+        agent,
+        structured,
+        analysisBody: body,
+        cfg,
+        durationSeconds: info.durationSeconds,
+      });
+      debug('识别结果交给主模型：', followup.sent);
+      const seconds = info.durationSeconds.toFixed(1);
+      if (followup.sent) {
+        return {
+          kind: 'success',
+          text: `已结束录音（${seconds} 秒），识别结果已交给主模型，最终结论会由主模型在会话里给出。`,
+        };
+      }
+      // 无法交给主模型时退回完整分析，避免结果丢失。
       const text = buildAnalysisText({
         answer: result.answer,
         model: result.model,
         durationSeconds: info.durationSeconds,
         wavBytes: info.bytes,
       });
-      const followup = sendLyricsFollowup({
-        agent,
-        structured,
-        cfg,
-        durationSeconds: info.durationSeconds,
-      });
-      debug('歌词回传主模型：', followup?.sent ?? false);
-      return { kind: 'success', text: followup ? `${text}\n\n${followup.note}` : text };
+      return { kind: 'success', text: followup.note ? `${text}\n\n（${followup.note}）` : text };
     } finally {
       if (!cfg.keepRecording) await cleanupSession(info);
     }

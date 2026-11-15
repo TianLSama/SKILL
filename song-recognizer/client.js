@@ -20,39 +20,19 @@ window.__ModuleLoader__.load({
       'command.label': '听歌识曲',
       'command.description': '内录电脑声音，识别正在播放的歌曲并分析音乐特征',
       'title': '听歌识曲',
-      'subtitle': '内录电脑声音 · 不使用麦克风',
+      'subtitle': '默认播放设备',
       'starting': '正在启动内录…',
       'recording': '正在录制电脑声音',
       'recordingHint': '请让歌曲持续播放，建议录 10–20 秒；结束时点击下方按钮。',
       'elapsed': '已录 {seconds} 秒',
       'stop': '结束录音并识别',
-      'analyzing': '正在分析音乐特征…',
-      'analyzingHint': 'qwen3.8-omni-flash 正在识别曲目、节奏、调性与编曲，通常需要 10–40 秒。',
+      'analyzing': '正在分析，结果会交给主模型…',
+      'analyzingHint': '识别完成后小窗会自动关闭，最终结论由主模型在会话里给出。',
       'cancel': '取消并丢弃',
       'close': '关闭',
       'retry': '重新录音',
-      'copy': '复制结果',
-      'copied': '已复制',
-      'copyFailed': '复制失败',
-      'errorTitle': '识别未完成',
+      'errorTitle': '录音未完成',
       'dismiss': '知道了',
-      'resultTitle': '识别结果',
-      'analysisTitle': '音乐分析',
-      'confidence': '置信度',
-      'unknown': '不确定',
-      'field.version': '版本',
-      'field.language': '语言',
-      'field.genres': '流派',
-      'field.moods': '情绪',
-      'field.bpm': 'BPM',
-      'field.timeSignature': '拍号',
-      'field.key': '调性',
-      'field.instruments': '乐器/编曲',
-      'field.vocal': '人声',
-      'field.era': '年代/风格',
-      'field.lyrics': '歌词片段',
-      'field.similar': '相似作品',
-      'field.summary': '摘要',
       'config.summary': '配置最长录音时长、思考强度、PowerShell 路径与调试选项。',
       'config.maxSeconds': '最长录音秒数',
       'config.maxSecondsHint': '到达该时长后自动停止录音，范围 5–600。',
@@ -66,8 +46,8 @@ window.__ModuleLoader__.load({
       'config.keepRecordingHint': '识别后保留临时 WAV，便于排查问题。',
       'config.promptExtra': '附加要求',
       'config.promptExtraHint': '追加到音乐特征分析提示词末尾，例如「重点说明编曲与音色」。',
-      'config.autoFollowup': '歌词联网核对',
-      'config.autoFollowupHint': '识别出歌词后，自动把歌词片段发给主模型，用网络搜索到音乐站点按歌词匹配歌曲。',
+      'config.autoFollowup': '结果交给主模型',
+      'config.autoFollowupHint': '识别完成后把整份识别结果交给主模型，由它联网核对并给出最终结论。',
       'config.searchSites': '歌词检索站点',
       'config.searchSitesHint': '主模型核对歌词时优先参考的站点，可用顿号或逗号分隔。',
       'config.debug': '调试日志',
@@ -85,39 +65,19 @@ window.__ModuleLoader__.load({
       'command.label': 'Identify song',
       'command.description': 'Record system audio and identify the playing song with a multi-dimensional music analysis',
       'title': 'Identify song',
-      'subtitle': 'System audio loopback · no microphone',
+      'subtitle': 'Default playback device',
       'starting': 'Starting the system-audio recorder…',
       'recording': 'Recording your computer\'s audio',
       'recordingHint': 'Keep the song playing; 10–20 seconds is usually enough. Stop with the button below.',
       'elapsed': 'Recorded {seconds}s',
       'stop': 'Stop and identify',
-      'analyzing': 'Analyzing the music…',
-      'analyzingHint': 'qwen3.8-omni-flash is identifying the track, tempo, key and arrangement; this usually takes 10–40 seconds.',
+      'analyzing': 'Analyzing and handing over to the main model…',
+      'analyzingHint': 'This window closes automatically when analysis finishes; the main model then gives the final answer in the conversation.',
       'cancel': 'Cancel and discard',
       'close': 'Close',
       'retry': 'Record again',
-      'copy': 'Copy result',
-      'copied': 'Copied',
-      'copyFailed': 'Copy failed',
-      'errorTitle': 'Identification failed',
+      'errorTitle': 'Recording did not finish',
       'dismiss': 'Dismiss',
-      'resultTitle': 'Result',
-      'analysisTitle': 'Music analysis',
-      'confidence': 'Confidence',
-      'unknown': 'Uncertain',
-      'field.version': 'Version',
-      'field.language': 'Language',
-      'field.genres': 'Genres',
-      'field.moods': 'Mood',
-      'field.bpm': 'BPM',
-      'field.timeSignature': 'Time signature',
-      'field.key': 'Key',
-      'field.instruments': 'Instruments / arrangement',
-      'field.vocal': 'Vocals',
-      'field.era': 'Era / style',
-      'field.lyrics': 'Lyrics',
-      'field.similar': 'Similar works',
-      'field.summary': 'Summary',
       'config.summary': 'Configure the maximum recording length, reasoning effort, PowerShell path and debug options.',
       'config.maxSeconds': 'Maximum recording seconds',
       'config.maxSecondsHint': 'Recording stops automatically at this length; range 5–600.',
@@ -131,8 +91,8 @@ window.__ModuleLoader__.load({
       'config.keepRecordingHint': 'Keep the temporary WAV after identification for troubleshooting.',
       'config.promptExtra': 'Extra instruction',
       'config.promptExtraHint': 'Appended to the music-analysis prompt, such as “focus on arrangement and timbre”.',
-      'config.autoFollowup': 'Verify lyrics online',
-      'config.autoFollowupHint': 'After identifying lyrics, send the snippet back to the main model so it can search music sites for a lyric match.',
+      'config.autoFollowup': 'Hand the result to the main model',
+      'config.autoFollowupHint': 'After identification, hand the whole result to the main model so it can verify the song online and give the final answer.',
       'config.searchSites': 'Lyric search sites',
       'config.searchSitesHint': 'Sites the main model should check first when matching lyrics; separate them with commas.',
       'config.debug': 'Debug logging',
@@ -181,14 +141,10 @@ window.__ModuleLoader__.load({
 
     const store = createStore({
       open: false,
-      phase: 'idle', // idle | starting | recording | analyzing | done | error
+      phase: 'idle', // idle | starting | recording | analyzing | error
       startedAt: 0,
       elapsed: 0,
       error: '',
-      result: null,
-      meta: '',
-      body: '',
-      copied: false,
       session: null,
     });
 
@@ -197,39 +153,6 @@ window.__ModuleLoader__.load({
       const mm = String(Math.floor(total / 60)).padStart(2, '0');
       const ss = String(total % 60).padStart(2, '0');
       return `${mm}:${ss}`;
-    }
-
-    function valueText(value) {
-      if (value == null) return '';
-      if (Array.isArray(value)) return value.map((item) => String(item)).filter(Boolean).join('、');
-      if (typeof value === 'number') return Number.isFinite(value) ? String(value) : '';
-      if (typeof value === 'object') return JSON.stringify(value);
-      return String(value);
-    }
-
-    /** 解析 Host 返回的识别文本：元信息行 + JSON 块 + 正文分析。 */
-    function parseResultText(text) {
-      const raw = typeof text === 'string' ? text : '';
-      const match = raw.match(/```json\s*([\s\S]*?)```/i);
-      let structured = null;
-      let rest = raw;
-      if (match) {
-        try {
-          const parsed = JSON.parse(match[1]);
-          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) structured = parsed;
-        } catch {
-          structured = null;
-        }
-        rest = `${raw.slice(0, match.index)}${raw.slice(match.index + match[0].length)}`;
-      }
-      const lines = rest.split('\n');
-      const firstIndex = lines.findIndex((line) => line.trim());
-      const meta = firstIndex >= 0 ? lines[firstIndex].trim() : '';
-      const body = lines
-        .slice(firstIndex + 1)
-        .join('\n')
-        .trim();
-      return { structured, meta, body };
     }
 
     function apply(ctx) {
@@ -273,7 +196,7 @@ window.__ModuleLoader__.load({
 
       function setError(message) {
         stopTicker();
-        store.set({ phase: 'error', error: message, elapsed: 0, copied: false });
+        store.set({ phase: 'error', error: message, elapsed: 0 });
       }
 
       async function begin(session) {
@@ -284,10 +207,6 @@ window.__ModuleLoader__.load({
           startedAt: 0,
           elapsed: 0,
           error: '',
-          result: null,
-          meta: '',
-          body: '',
-          copied: false,
         });
         try {
           const result = await callHost('start');
@@ -304,18 +223,12 @@ window.__ModuleLoader__.load({
         stopTicker();
         store.set({ phase: 'analyzing', error: '' });
         try {
+          // 只等 Host 完成识别并把结果交给主模型；小窗不展示分析内容。
           const result = await callHost('stop');
           if (!result || result.kind !== 'success') {
             throw new Error((result && result.text) || '识别失败');
           }
-          const parsed = parseResultText(result.text);
-          store.set({
-            phase: 'done',
-            result: parsed.structured,
-            meta: parsed.meta,
-            body: parsed.body,
-            elapsed: store.get().elapsed,
-          });
+          store.set({ open: false, phase: 'idle', session: null, elapsed: 0, error: '' });
         } catch (error) {
           setError(error && error.message ? error.message : String(error));
         }
@@ -438,7 +351,7 @@ window.__ModuleLoader__.load({
         keepRecording: v.keepRecording === true,
         debug: v.debug === true,
         promptExtra: typeof v.promptExtra === 'string' ? v.promptExtra : '',
-        autoLyricsFollowup: v.autoLyricsFollowup !== false,
+        autoModelFollowup: v.autoModelFollowup !== false,
         searchSites: typeof v.searchSites === 'string' ? v.searchSites : '',
       };
     }
@@ -486,7 +399,7 @@ window.__ModuleLoader__.load({
         textOp('pwshPath', draft.pwshPath);
         textOp('ffmpegPath', draft.ffmpegPath);
         textOp('promptExtra', draft.promptExtra);
-        setOp('autoLyricsFollowup', draft.autoLyricsFollowup === true);
+        setOp('autoModelFollowup', draft.autoModelFollowup === true);
         textOp('searchSites', draft.searchSites);
         try {
           const ok = await form.mutate(ops, revision);
@@ -571,9 +484,9 @@ window.__ModuleLoader__.load({
           { style: { display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: COLORS.label } },
           h('input', {
             type: 'checkbox',
-            checked: draft.autoLyricsFollowup === true,
+            checked: draft.autoModelFollowup === true,
             disabled,
-            onChange: (event) => edit('autoLyricsFollowup', event.target.checked),
+            onChange: (event) => edit('autoModelFollowup', event.target.checked),
           }),
           h('span', null, t('config.autoFollowup')),
         ),
@@ -650,57 +563,9 @@ window.__ModuleLoader__.load({
       return h(ConfigPanel, { t, form });
     }
 
-    function FieldGrid({ structured, t }) {
-      const order = [
-        'version',
-        'language',
-        'genres',
-        'moods',
-        'bpm',
-        'timeSignature',
-        'key',
-        'instruments',
-        'vocal',
-        'era',
-        'lyrics',
-        'similar',
-      ];
-      const rows = [];
-      for (const key of order) {
-        const text = valueText(structured[key]);
-        if (!text) continue;
-        rows.push(
-          h(
-            'div',
-            { key, style: { display: 'flex', gap: 8, alignItems: 'flex-start', lineHeight: 1.5 } },
-            h(
-              'span',
-              {
-                style: {
-                  flex: '0 0 84px',
-                  color: COLORS.secondary,
-                  fontSize: 12,
-                  paddingTop: 1,
-                },
-              },
-              t(`field.${key}`),
-            ),
-            h(
-              'span',
-              { style: { flex: 1, color: COLORS.label, fontSize: 13, wordBreak: 'break-word' } },
-              text,
-            ),
-          ),
-        );
-      }
-      if (rows.length === 0) return null;
-      return h('div', { style: { display: 'flex', flexDirection: 'column', gap: 6 } }, rows);
-    }
-
     function SongIdPanel(props) {
       const state = React.useSyncExternalStore(store.subscribe, store.get);
       const t = props.t;
-      const [copyState, setCopyState] = React.useState('');
 
       React.useEffect(() => {
         if (!state.open) return undefined;
@@ -714,40 +579,12 @@ window.__ModuleLoader__.load({
         return () => window.removeEventListener('keydown', onKeyDown);
       }, [state.open, props.close]);
 
-      React.useEffect(() => {
-        if (copyState === '') return undefined;
-        const timer = setTimeout(() => setCopyState(''), 1800);
-        return () => clearTimeout(timer);
-      }, [copyState]);
-
       if (!state.open) return null;
 
       const recording = state.phase === 'recording';
       const analyzing = state.phase === 'analyzing';
       const starting = state.phase === 'starting';
-      const done = state.phase === 'done';
       const failed = state.phase === 'error';
-      const structured = state.result || {};
-
-      const copy = async () => {
-        const structuredText = state.result ? `${valueText(structured.title) || ''} ${valueText(structured.artist) || ''}`.trim() : '';
-        const text = [structuredText, state.meta, state.body].filter(Boolean).join('\n\n');
-        try {
-          if (navigator.clipboard && navigator.clipboard.writeText) {
-            await navigator.clipboard.writeText(text);
-          } else {
-            const area = document.createElement('textarea');
-            area.value = text;
-            document.body.appendChild(area);
-            area.select();
-            document.execCommand('copy');
-            area.remove();
-          }
-          setCopyState('copied');
-        } catch {
-          setCopyState('failed');
-        }
-      };
 
       const header = h(
         'div',
@@ -925,113 +762,6 @@ window.__ModuleLoader__.load({
                 },
               },
               t('dismiss'),
-            ),
-            h(
-              'button',
-              {
-                type: 'button',
-                onClick: props.retry,
-                style: {
-                  border: 'none',
-                  background: COLORS.brand,
-                  color: 'var(--dsw-alias-bg-base, #ffffff)',
-                  borderRadius: 8,
-                  padding: '7px 14px',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                },
-              },
-              t('retry'),
-            ),
-          ),
-        );
-      } else if (done) {
-        const title = valueText(structured.title) || t('unknown');
-        const artist = valueText(structured.artist);
-        const confidence = typeof structured.confidence === 'number' ? structured.confidence : undefined;
-        body = h(
-          'div',
-          { style: { display: 'flex', flexDirection: 'column', gap: 12, padding: '12px 0 4px', minHeight: 0 } },
-          h(
-            'div',
-            { style: { display: 'flex', flexDirection: 'column', gap: 2 } },
-            h('div', { style: { fontSize: 18, fontWeight: 700, color: COLORS.label, lineHeight: 1.3, wordBreak: 'break-word' } }, title),
-            artist
-              ? h('div', { style: { fontSize: 13, color: COLORS.secondary } }, artist)
-              : null,
-            confidence !== undefined
-              ? h('div', { style: { fontSize: 11, color: COLORS.success, marginTop: 2 } }, `${t('confidence')} ${Math.round(confidence * 100)}%`)
-              : null,
-          ),
-          structured.summary
-            ? h(
-                'div',
-                {
-                  style: {
-                    fontSize: 12,
-                    color: COLORS.label,
-                    lineHeight: 1.6,
-                    background: 'var(--dsw-alias-bg-layer-2, rgba(0,0,0,0.03))',
-                    borderRadius: 8,
-                    padding: '8px 10px',
-                  },
-                },
-                valueText(structured.summary),
-              )
-            : null,
-          h(FieldGrid, { structured, t }),
-          state.body
-            ? h(
-                'details',
-                { style: { marginTop: 2 } },
-                h(
-                  'summary',
-                  { style: { cursor: 'pointer', fontSize: 12, color: COLORS.secondary, userSelect: 'none' } },
-                  t('analysisTitle'),
-                ),
-                h(
-                  'pre',
-                  {
-                    style: {
-                      margin: '8px 0 0',
-                      padding: 0,
-                      whiteSpace: 'pre-wrap',
-                      wordBreak: 'break-word',
-                      font: 'inherit',
-                      fontSize: 12,
-                      lineHeight: 1.7,
-                      color: COLORS.label,
-                      maxHeight: 220,
-                      overflow: 'auto',
-                    },
-                  },
-                  state.body,
-                ),
-              )
-            : null,
-          h(
-            'div',
-            { style: { display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-end', marginTop: 2 } },
-            state.meta
-              ? h('span', { style: { marginRight: 'auto', fontSize: 11, color: COLORS.idle, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, state.meta)
-              : null,
-            h(
-              'button',
-              {
-                type: 'button',
-                onClick: copy,
-                style: {
-                  border: `0.5px solid ${COLORS.border}`,
-                  background: 'transparent',
-                  color: COLORS.secondary,
-                  borderRadius: 8,
-                  padding: '7px 12px',
-                  fontSize: 12,
-                  cursor: 'pointer',
-                },
-              },
-              copyState === 'copied' ? t('copied') : copyState === 'failed' ? t('copyFailed') : t('copy'),
             ),
             h(
               'button',

@@ -39,10 +39,12 @@ export const Config = z
       .default('')
       .description('追加到识别提示词末尾的额外要求（例如只关注曲风）。')
       .volatile(),
-    autoLyricsFollowup: z
+    autoModelFollowup: z
       .boolean()
       .default(true)
-      .description('识别出歌词后，自动把歌词片段发给主模型，让它用网络搜索到网易云、酷狗、QQ 音乐、汽水音乐、萌娘百科等站点核对歌曲。')
+      .description(
+        '识别完成后把整份结果（曲目、流派、BPM、调性、歌词等）交给主模型：有歌词就联网核对歌名与版本，最终结论由主模型在会话里给出。',
+      )
       .volatile(),
     searchSites: z
       .string()
@@ -90,7 +92,7 @@ export function normalizeConfig(raw) {
     pwshPath: textOr(field(cfg, 'pwshPath'), 'pwsh'),
     keepRecording: field(cfg, 'keepRecording') === true,
     promptExtra: typeof field(cfg, 'promptExtra') === 'string' ? field(cfg, 'promptExtra').trim() : '',
-    autoLyricsFollowup: field(cfg, 'autoLyricsFollowup') !== false,
+    autoModelFollowup: field(cfg, 'autoModelFollowup') !== false,
     searchSites: textOr(field(cfg, 'searchSites'), DEFAULT_SEARCH_SITES),
     debug: field(cfg, 'debug') === true,
   };
