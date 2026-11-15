@@ -64,6 +64,13 @@ hot-search/report_data.json
 exports/
 output/
 .dsh-acl-recovery/
-.tmp-*/
-.dsh-song-id/
+.tmp-*
+.dsh-song-id
 *.tgz
+# 敏感/凭据文件
+.env
+.env.*
+*.pem
+*.key
+.credentials.yaml
+credentials.yaml

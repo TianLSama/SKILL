@@ -22,7 +22,7 @@
 
 | 项 | 值 |
 | --- | --- |
-| Base URL | `https://<workspace-id>.<region>.maas.aliyuncs.com/compatible-mode/v1`（占位示例，按实际填写） |
+| Base URL | `https://<你的接入点>/compatible-mode/v1`（占位示例，按实际填写） |
 | Base URL 环境变量 | `ALIYUN_BASE_URL`（页面未填写时回退） |
 | 模型 | `qwen3.8-omni-flash` |
 | 协议 | OpenAI 兼容 `POST /chat/completions`，`modalities: ["text"]` |
